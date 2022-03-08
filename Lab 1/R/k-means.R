@@ -51,7 +51,7 @@ custom_kmeans <- function(X, k) {
       new_centroids[i,] <- kthcentroid
     }
     
-    plot(x=X_pca$x[,1], y=X_pca$x[,3], col=assig_cluster[,5], main="Cluster")
+    plot(x=X_pca$x[,1], y=X_pca$x[,2], col=assig_cluster[,5], main="Cluster")
     
     if(isTRUE(all.equal(new_centroids, centroids))) {
       centroids_not_equal = FALSE
