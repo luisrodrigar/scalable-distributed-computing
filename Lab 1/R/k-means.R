@@ -1,21 +1,34 @@
 library(dplyr)
 
-X <- iris %>% dplyr::select(-Species) %>% as.matrix()
-k <- 3
+data <- read.csv("../python/computers_dev.csv")
 
-X_pca <- prcomp(X)
+X <- data %>% mutate(
+  cd = ifelse(cd == "no", 0, 1),
+  laptop = ifelse(laptop == "no", 0, 1)
+) %>% dplyr::select(-id) %>% as.matrix()
+
+n <- nrow(X)
+p <- ncol(X)
+
+# Part one – Serial version
+
+# 1. Construct the elbow graph and find the optimal clusters number(k)
+## OPTION A
+
+# 2.- Implement the k-means algorithm
 
 # This function returns the same index when the parameters is an scalar
 # and returns a random index selected from the list passing as parameter
-random_index <- function(indexes) {
+random_index <- function(indexes, seed_value) {
   if(length(indexes) == 1) {
     return(indexes)
   } else {
+    set.seed(seed = seed_value)
     return(sample(x=indexes, size=1))
   }
 }
 
-custom_kmeans <- function(X, k) {
+custom_kmeans <- function(X, k, seed_value) {
   n <- nrow(X)
   p <- ncol(X)
   
@@ -23,12 +36,11 @@ custom_kmeans <- function(X, k) {
   centroids_not_equal <- TRUE
   ite <- 1
   
+  set.seed(seed = seed_value)
   centroids_index <- sample(x=n, size = k)
-  centroids <- X[centroids_index,]
+  centroids <- rbind(X[centroids_index,])
   
   while(centroids_not_equal) {
-    print(sprintf("The iteration is: %s", ite))
-    
     distance_cluster <- matrix(0, nrow=n, ncol=k)
     for (i in seq_len(k)){
       distance_cluster[, i] <- sqrt(rowSums((X[,]-t(replicate(n, centroids[i,])))^2))
@@ -37,7 +49,7 @@ custom_kmeans <- function(X, k) {
     cluster <- numeric(n)
     for (i in seq_len(n)){
       min_value_cluster_indexes <- which(distance_cluster[i,] == min(distance_cluster[i,]))
-      cluster[i] <- random_index(min_value_cluster_indexes)
+      cluster[i] <- random_index(min_value_cluster_indexes, seed_value)
     }
     assig_cluster <- cbind(X, cluster)
     
@@ -51,8 +63,6 @@ custom_kmeans <- function(X, k) {
       new_centroids[i,] <- kthcentroid
     }
     
-    plot(x=X_pca$x[,1], y=X_pca$x[,2], col=assig_cluster[,5], main="Cluster")
-    
     if(isTRUE(all.equal(new_centroids, centroids))) {
       centroids_not_equal = FALSE
     } else {
@@ -63,5 +73,64 @@ custom_kmeans <- function(X, k) {
   return(assig_cluster)
 }
 
-res <- custom_kmeans(X, k)
+elbow_graph <- function(X, total_k = 10, seed_value) {
+  n <- nrow(X)
+  p <- ncol(X)
+  sum_sq_dist_total <- numeric(total_k)
+  for (i in seq_len(total_k)) {
+    res_X <- custom_kmeans(X, i, seed_value)
+    sum_sq_distance <- 0
+    for(j in seq_len(i)) {
+      elements_cluster <- rbind(res_X[which(res_X[, p+1]==j),])
+      centroidekth <- apply(res_X[which(res_X[,p+1]==j),], MARGIN=2, FUN=mean)
+      distance_centroid <- rowSums((elements_cluster-t(replicate(nrow(elements_cluster), centroidekth)))^2)
+      sum_sq_distance <- sum_sq_distance + sum(distance_centroid)
+    }
+    sum_sq_dist_total[i] = sum_sq_distance
+  }
+  plot(x=seq_len(total_k), y=sum_sq_dist_total, type="l", col="blue", xlab="Number of clusters", ylab="Total Sum of Squares")
+  points(x=seq_len(total_k), y=sum_sq_dist_total)
+  return(sum_sq_dist_total)
+}
+
+seed_value = 123456
+elbow_graph(X, seed_value = seed_value)
+
+# 3.- Cluster the data using the optimum value using k-means.
+optimal_k <- 3
+res <- custom_kmeans(X, optimal_k, seed_value)
+
+# 4.- Measure time
+
+start_time <- Sys.time()
+res <- custom_kmeans(X, optimal_k, seed_value)
+end_time <- Sys.time()
+end_time - start_time
+
+# 5.- Plot the results of the elbow graph.
+
+elbow_graph(X, seed_value = seed_value)
+
+# 6.- Plot the first 2 dimensions of the clusters
+
+plot(x=X[,1], y=X[,2], col=res[,p+1], xlab="price", ylab="speed",
+     main="Cluster with optimal k = 3")
+legend("topleft", col=c(1, 2, 3), 
+       legend=c("Cluster 1", "Cluster 2", "Cluster 3"), lwd=2, bty = "n",cex=0.75)
+
+# 7.- Find the cluster with the highest average price and print it.
+
+res_avg_cluster <- data.frame(res) %>% 
+  group_by(cluster) %>% 
+  summarise(mean_price = mean(price))
+
+cluster_high_avg_price <- res_avg_cluster %>% dplyr::filter(mean_price == max(mean_price)) %>% select(cluster)
+
+print(sprintf("The cluster with the highest average price is %d", cluster_high_avg_price[[1]]))
+
+# 6.- Print a heat map using the values of the clusters centroids.
+
+heatmap(x = X, scale = "none", col = res[,p+1], cexRow = 0.7, labRow=data$id)
+
+# Part two – Parallel implementation, multiprocessing
 
