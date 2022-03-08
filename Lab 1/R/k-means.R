@@ -5,6 +5,16 @@ k <- 3
 
 X_pca <- prcomp(X)
 
+# This function returns the same index when the parameters is an scalar
+# and returns a random index selected from the list passing as parameter
+random_index <- function(indexes) {
+  if(length(indexes) == 1) {
+    return(indexes)
+  } else {
+    return(sample(x=indexes, size=1))
+  }
+}
+
 custom_kmeans <- function(X, k) {
   n <- nrow(X)
   p <- ncol(X)
@@ -26,8 +36,8 @@ custom_kmeans <- function(X, k) {
     
     cluster <- numeric(n)
     for (i in seq_len(n)){
-      min_value_cluster <- which(distance_cluster[i,] == min(distance_cluster[i,]))
-      cluster[i] <- sample(x=list(min_value_cluster), size=1)[[1]]
+      min_value_cluster_indexes <- which(distance_cluster[i,] == min(distance_cluster[i,]))
+      cluster[i] <- random_index(min_value_cluster_indexes)
     }
     assig_cluster <- cbind(X, cluster)
     
@@ -41,7 +51,6 @@ custom_kmeans <- function(X, k) {
       new_centroids[i,] <- kthcentroid
     }
     
-    print(assig_cluster)
     plot(x=X_pca$x[,1], y=X_pca$x[,3], col=assig_cluster[,5], main="Cluster")
     
     if(isTRUE(all.equal(new_centroids, centroids))) {
