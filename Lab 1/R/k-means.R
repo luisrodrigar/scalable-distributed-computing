@@ -150,6 +150,6 @@ print(sprintf("The cluster with the highest average price is %d",
 
 # 6.- Print a heat map using the values of the clusters centroids
 
-heatmap(scale_X = , scale = "none", col = res[, p+1], cexRow = 0.7, labRow=data$id)
+heatmap(x = scale_X, scale = "none", col = res[, p+1], cexRow = 0.7, labRow=data$id)
 
 # Part two – Parallel implementation, multiprocessing
