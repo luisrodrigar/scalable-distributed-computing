@@ -55,7 +55,6 @@ custom_kmeans <- function(X, k, seed_value) {
       cluster[i] <- random_index(min_value_cluster_indexes, seed_value)
     }
     assig_cluster <- cbind(X, cluster)
-    new_centroids_index <- c()
     new_centroids <- matrix(0, nrow=k, ncol=p)
     for (i in seq_len(k)){
       x_index_kth_cluster <- which(assig_cluster[, p+1]==i)
