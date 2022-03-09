@@ -3,16 +3,19 @@ library(rgl)
 
 data <- read.csv("../python/computers_dev.csv")
 
+# Delete the categorical variables as it is not possible to apply k-means on them
 X <- data %>% mutate(
   cd = ifelse(cd == "no", 0, 1),
   laptop = ifelse(laptop == "no", 0, 1)
-) %>% dplyr::select(-id) %>% as.matrix()
+) %>% dplyr::select(-id)
 
-n <- nrow(X)
-p <- ncol(X)
+X_without_cat <- X %>% dplyr::select(-cd, -laptop, -trend) %>% as.matrix()
+
+n <- nrow(X_without_cat)
+p <- ncol(X_without_cat)
 
 # Scale computers data
-scale_X <- scale(X)
+scale_X <- scale(X_without_cat)
 
 # Part one – Serial version
 
@@ -147,6 +150,6 @@ print(sprintf("The cluster with the highest average price is %d",
 
 # 6.- Print a heat map using the values of the clusters centroids
 
-heatmap(x = X, scale = "none", col = res[,p+1], cexRow = 0.7, labRow=data$id)
+heatmap(scale_X = , scale = "none", col = res[, p+1], cexRow = 0.7, labRow=data$id)
 
 # Part two – Parallel implementation, multiprocessing
