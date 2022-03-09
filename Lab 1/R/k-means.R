@@ -1,4 +1,5 @@
 library(dplyr)
+library(rgl)
 
 data <- read.csv("../python/computers_dev.csv")
 
@@ -9,6 +10,9 @@ X <- data %>% mutate(
 
 n <- nrow(X)
 p <- ncol(X)
+
+# Scale computers data
+scale_X <- scale(X)
 
 # Part one – Serial version
 
@@ -88,35 +92,53 @@ elbow_graph <- function(X, total_k = 10, seed_value) {
     }
     sum_sq_dist_total[i] = sum_sq_distance
   }
-  plot(x=seq_len(total_k), y=sum_sq_dist_total, type="l", col="blue", xlab="Number of clusters", ylab="Total Sum of Squares")
+  plot(x=seq_len(total_k), y=sum_sq_dist_total, type="l", col="blue", 
+       xlab="Number of clusters", ylab="Total Sum of Squares")
   points(x=seq_len(total_k), y=sum_sq_dist_total)
   return(sum_sq_dist_total)
 }
 
 seed_value = 123456
-elbow_graph(X, seed_value = seed_value)
+elbow_graph(scale_X, seed_value = seed_value)
 
 # 3.- Cluster the data using the optimum value using k-means.
-optimal_k <- 3
-res <- custom_kmeans(X, optimal_k, seed_value)
+optimal_k <- 2
+res <- custom_kmeans(scale_X, optimal_k, seed_value)
 
 # 4.- Measure time
 
 start_time <- Sys.time()
-res <- custom_kmeans(X, optimal_k, seed_value)
+res <- custom_kmeans(scale_X, optimal_k, seed_value)
 end_time <- Sys.time()
 end_time - start_time
 
+start_time <- Sys.time()
+elbow_graph(scale_X, seed_value = seed_value)
+end_time <- Sys.time()
+end_time - start_time
+
+microbenchmark::microbenchmark(custom_kmeans(scale_X, 2, 12345), times=10)
+
 # 5.- Plot the results of the elbow graph.
 
-elbow_graph(X, seed_value = seed_value)
+elbow_graph(scale_X, seed_value = seed_value)
 
 # 6.- Plot the first 2 dimensions of the clusters
 
-plot(x=X[,1], y=X[,2], col=res[,p+1], xlab="price", ylab="speed",
-     main="Cluster with optimal k = 3")
-legend("topleft", col=c(1, 2, 3), 
-       legend=c("Cluster 1", "Cluster 2", "Cluster 3"), lwd=2, bty = "n",cex=0.75)
+plot(x=scale_X[,1], y=scale_X[,2], col=res[,p+1], xlab="price", ylab="speed",
+     main="Cluster with optimal k = 2")
+legend_names <- paste("cluster", seq_len(optimal_k), sep=" ")
+legend("topleft", col=seq_len(optimal_k), legend=legend_names, lwd=2, bty = "n",
+       cex=0.75)
+
+## Plot the three first principal components
+
+colors_2 <- viridis::viridis(2)
+cluster_colors <- ifelse(res[, p +1] == 1, colors_2[1], colors_2[2])
+X_pca <- prcomp(X)
+plot3d(X_pca$x[,1], X_pca$x[,2], X_pca$x[,3], pch = 30, col=cluster_colors)
+legend3d("topright", legend = legend_names, col = colors_2, pch=19)
+
 
 # 7.- Find the cluster with the highest average price and print it.
 
@@ -124,9 +146,12 @@ res_avg_cluster <- data.frame(res) %>%
   group_by(cluster) %>% 
   summarise(mean_price = mean(price))
 
-cluster_high_avg_price <- res_avg_cluster %>% dplyr::filter(mean_price == max(mean_price)) %>% select(cluster)
+cluster_high_avg_price <- res_avg_cluster %>% 
+  dplyr::filter(mean_price == max(mean_price)) %>% 
+  dplyr::select(cluster)
 
-print(sprintf("The cluster with the highest average price is %d", cluster_high_avg_price[[1]]))
+print(sprintf("The cluster with the highest average price is %d", 
+              cluster_high_avg_price[[1]]))
 
 # 6.- Print a heat map using the values of the clusters centroids.
 
