@@ -38,33 +38,37 @@ random_index <- function(indexes, seed_value) {
   }
 }
 
-custom_kmeans <- function(X, k, seed_value) {
-  n <- nrow(X)
-  p <- ncol(X)
+custom_kmeans <- function(data, k, seed_value) {
+  n <- nrow(data)
+  p <- ncol(data)
   assig_cluster <- matrix(0, nrow=n, ncol=p+1)
   centroids_not_equal <- TRUE
   ite <- 1
   set.seed(seed = seed_value)
   centroids_index <- sample(x=n, size = k)
-  centroids <- rbind(X[centroids_index,])
+  centroids <- rbind(data[centroids_index,])
   while(centroids_not_equal) {
     distance_cluster <- matrix(0, nrow=n, ncol=k)
     for (i in seq_len(k)){
-      distance_cluster[, i] <- sqrt(rowSums((X[,]-t(replicate(n, centroids[i,])))^2))
+      substracting_dist <- sweep(data, MARGIN=2, STATS=as.array(centroids[i,]), FUN = "-")
+      distance_cluster[, i] <- sqrt(rowSums(substracting_dist^2))
     }
+
     cluster <- numeric(n)
     for (i in seq_len(n)){
       min_value_cluster_indexes <- which(distance_cluster[i,] == min(distance_cluster[i,]))
       cluster[i] <- random_index(min_value_cluster_indexes, seed_value)
     }
-    assig_cluster <- cbind(X, cluster)
+    assig_cluster <- cbind(data, cluster)
+    
     new_centroids <- matrix(0, nrow=k, ncol=p)
     for (i in seq_len(k)){
       x_index_kth_cluster <- which(assig_cluster[, p+1]==i)
-      x_kth_cluster <- rbind(X[x_index_kth_cluster,])
+      x_kth_cluster <- rbind(data[x_index_kth_cluster,])
       kthcentroid <- apply(x_kth_cluster, MARGIN=2, FUN=mean)
       new_centroids[i,] <- kthcentroid
     }
+
     if(isTRUE(all.equal(new_centroids, centroids))) {
       centroids_not_equal = FALSE
     } else {
@@ -152,8 +156,7 @@ print(sprintf("The cluster with the highest average price is %d",
 
 # 6.- Print a heat map using the values of the clusters centroids
 
-cluster_summary <- data.frame(res) %>% 
-  group_by(cluster) %>% 
+cluster_summary <- res_group_cluster %>% 
   summarise(
     price = mean(price),
     speed = mean(speed),
