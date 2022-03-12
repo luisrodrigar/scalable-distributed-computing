@@ -19,7 +19,7 @@ autoStopCluster <- function(cl) {
   cl
 }
 
-custom_kmeans_parallel <- function(k, data, seed_value) {
+custom_kmeans_parallel <- function(data, k, seed_value) {
   num_cores <- detectCores()-1
   par_cluster <- parallel::makeCluster(num_cores)
   doParallel::registerDoParallel(par_cluster)
@@ -103,7 +103,7 @@ print("Measure the time for the k-mean ")
 print("Serial version:") 
 
 start_time_multi <- Sys.time()
-kmeans_opt <- custom_kmeans(2, scale_X, 1234)
+kmeans_opt <- custom_kmeans(scale_X, 2, 1234)
 end_time_multi <- Sys.time()
 end_time_multi-start_time_multi
 

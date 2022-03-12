@@ -38,19 +38,19 @@ random_index <- function(indexes, seed_value) {
   }
 }
 
-custom_kmeans <- function(data, k, seed_value) {
-  n <- nrow(data)
-  p <- ncol(data)
+custom_kmeans <- function(X, k, seed_value) {
+  n <- nrow(X)
+  p <- ncol(X)
   assig_cluster <- matrix(0, nrow=n, ncol=p+1)
   centroids_not_equal <- TRUE
   ite <- 1
   set.seed(seed = seed_value)
   centroids_index <- sample(x=n, size = k)
-  centroids <- rbind(data[centroids_index,])
+  centroids <- rbind(X[centroids_index,])
   while(centroids_not_equal) {
     distance_cluster <- matrix(0, nrow=n, ncol=k)
     for (i in seq_len(k)){
-      substracting_dist <- sweep(data, MARGIN=2, STATS=as.array(centroids[i,]), FUN = "-")
+      substracting_dist <- sweep(X, MARGIN=2, STATS=as.array(centroids[i,]), FUN = "-")
       distance_cluster[, i] <- sqrt(rowSums(substracting_dist^2))
     }
 
@@ -59,12 +59,12 @@ custom_kmeans <- function(data, k, seed_value) {
       min_value_cluster_indexes <- which(distance_cluster[i,] == min(distance_cluster[i,]))
       cluster[i] <- random_index(min_value_cluster_indexes, seed_value)
     }
-    assig_cluster <- cbind(data, cluster)
+    assig_cluster <- cbind(X, cluster)
     
     new_centroids <- matrix(0, nrow=k, ncol=p)
     for (i in seq_len(k)){
       x_index_kth_cluster <- which(assig_cluster[, p+1]==i)
-      x_kth_cluster <- rbind(data[x_index_kth_cluster,])
+      x_kth_cluster <- rbind(X[x_index_kth_cluster,])
       kthcentroid <- apply(x_kth_cluster, MARGIN=2, FUN=mean)
       new_centroids[i,] <- kthcentroid
     }
