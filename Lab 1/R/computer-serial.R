@@ -1,5 +1,7 @@
 library(dplyr)
 library(rgl)
+library(RColorBrewer)
+library(ggplot2)
 
 data <- read.csv("../python/computers_dev.csv")
 
@@ -136,11 +138,11 @@ legend3d("topright", legend = legend_names, col = colors_2, pch=19)
 
 # 7.- Find the cluster with the highest average price and print it
 
-res_avg_cluster <- data.frame(res) %>% 
-  group_by(cluster) %>% 
-  summarise(mean_price = mean(price))
+res_group_cluster <- data.frame(res) %>% 
+  group_by(cluster)
 
-cluster_high_avg_price <- res_avg_cluster %>% 
+cluster_high_avg_price <- res_group_cluster %>% 
+  summarise(mean_price = mean(price)) %>% 
   dplyr::filter(mean_price == max(mean_price)) %>% 
   dplyr::select(cluster)
 
@@ -149,6 +151,23 @@ print(sprintf("The cluster with the highest average price is %d",
 
 # 6.- Print a heat map using the values of the clusters centroids
 
-heatmap(x = scale_X, scale = "none", col = res[, p+1], cexRow = 0.7, labRow=data$id)
+cluster_summary <- data.frame(res) %>% 
+  group_by(cluster) %>% 
+  summarise(
+    price = mean(price),
+    speed = mean(speed),
+    hd = mean(hd),
+    ram = mean(ram),
+    cores = mean(cores),
+    screen = mean(screen)
+  ) %>% dplyr::select(-cluster)
 
-# Part two – Parallel implementation, multiprocessing
+heatmap(x = t(cluster_summary), scale = "none", cexRow = 0.7,
+        col= colorRampPalette(brewer.pal(8, "Oranges"))(25))
+
+legend(x="topleft", legend=c("-1", "0", "1"), 
+       fill=colorRampPalette(brewer.pal(8, "Oranges"))(3))
+ 
+## heatmap in progress
+
+
