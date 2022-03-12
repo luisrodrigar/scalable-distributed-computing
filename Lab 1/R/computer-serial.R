@@ -1,7 +1,8 @@
 library(dplyr)
 library(rgl)
 library(RColorBrewer)
-library(ggplot2)
+# install.packages("gplots")
+library("gplots")
 
 data <- read.csv("../python/computers_dev.csv")
 
@@ -160,14 +161,10 @@ cluster_summary <- data.frame(res) %>%
     ram = mean(ram),
     cores = mean(cores),
     screen = mean(screen)
-  ) %>% dplyr::select(-cluster)
+  ) %>% dplyr::select(-cluster) %>% as.data.frame
 
-heatmap(x = t(cluster_summary), scale = "none", cexRow = 0.7,
-        col= colorRampPalette(brewer.pal(8, "Oranges"))(25))
+heatmap.2(x = t(cluster_summary), scale = "none", trace="none", cexRow = 0.7,
+        col= brewer.pal(8, "Oranges"), density.info = "none")
 
-legend(x="topleft", legend=c("-1", "0", "1"), 
-       fill=colorRampPalette(brewer.pal(8, "Oranges"))(3))
- 
-## heatmap in progress
 
 
