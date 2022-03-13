@@ -1,27 +1,15 @@
-library(parallel)
-library(foreach)
-library(doParallel)
+source('utils.R')
 source("computer-serial.R")
+
+scale_X <- tidy_dataset(performance_dataset())
 
 # Part two – Parallel implementation, multiprocessing
 
 # 1.- Write a parallel version of you program using multiprocessing
 
-autoStopCluster <- function(cl) {
-  stopifnot(inherits(cl, "cluster"))
-  env <- new.env()
-  env$cluster <- cl
-  attr(cl, "gcMe") <- env
-  reg.finalizer(env, function(e) {
-    message(capture.output(print(e$cluster)))
-    try(parallel::stopCluster(e$cluster), silent = FALSE)
-  })
-  cl
-}
-
-custom_kmeans_parallel <- function(data, k, seed_value) {
-  num_cores <- detectCores()-1
-  par_cluster <- parallel::makeCluster(num_cores)
+custom_kmeans_mp <- function(data, k, seed_value) {
+  num_cores <- parallel::detectCores()
+  par_cluster <- parallel::makeCluster(as.integer(num_cores/2))
   doParallel::registerDoParallel(par_cluster)
   
   n <- nrow(data)
@@ -43,7 +31,8 @@ custom_kmeans_parallel <- function(data, k, seed_value) {
     cluster = max.col(sub_distance_min)
     assig_cluster <- cbind(data, cluster)
 
-    new_centroids <- foreach(i = seq_len(k), .combine = 'rbind') %dopar% {
+    new_centroids <- foreach(i = seq_len(k), .combine = 'rbind',
+                             .noexport='par_cluster') %dopar% {
       apply(rbind(data[which(assig_cluster[, p+1]==i),]), MARGIN=2, FUN=mean)
     }
     
@@ -55,31 +44,25 @@ custom_kmeans_parallel <- function(data, k, seed_value) {
     
     ite = ite + 1
   }
-  autoStopCluster(par_cluster)
+  on.exit(autoStopCluster(par_cluster))
   return(assig_cluster)
 }
 
-elbow_graph_parallel <- function(X, total_k = 10, seed_value) {
+elbow_graph_mp <- function(X, total_k = 10, seed_value) {
   n <- nrow(X)
   p <- ncol(X)
-  num_cores <- detectCores()-1
-  par_cluster <- parallel::makeCluster(num_cores)
+  num_cores <- detectCores()
+  par_cluster <- parallel::makeCluster(as.integer(num_cores-1))
   doParallel::registerDoParallel(par_cluster)
-  clusterEvalQ(par_cluster, {
-    library(parallel)
-    library(foreach)
-    library(doParallel)
-  })
-  clusterExport(cl=par_cluster, "custom_kmeans_parallel", envir = environment())
-  clusterExport(cl=par_cluster, "autoStopCluster", envir = environment())
   
   kmeans_data <- parLapply(cl=par_cluster, 
                            seq_len(total_k), 
-                           custom_kmeans_parallel, 
+                           custom_kmeans, 
                            data=X, 
                            seed_value=1234)
   
-  sum_sq_dist_total <- foreach(i = seq_len(total_k), .combine="c") %:%
+  sum_sq_dist_total <- foreach(i = seq_len(total_k), .combine="c", 
+                               .noexport='par_cluster') %:%
     foreach(j = seq_len(i), .combine="+") %dopar% {
       res_data <- kmeans_data[[i]]
       elements_cluster <- rbind(res_data[which(res_data[, p+1]==j),])
@@ -88,47 +71,79 @@ elbow_graph_parallel <- function(X, total_k = 10, seed_value) {
       dist_centroid <- rowSums(dista_matrix^2)
       sum(dist_centroid)
     }
+  on.exit(autoStopCluster(par_cluster))
   
-  autoStopCluster(par_cluster)
-  plot(x=seq_len(total_k), y=sum_sq_dist_total, type="l", col="blue", 
-       xlab="Number of clusters", ylab="Total Sum of Squares")
-  points(x=seq_len(total_k), y=sum_sq_dist_total)
   return(sum_sq_dist_total)
 }
 
 # 2. - Measure the time and optimize the program to get the fastest version you can.
 
-print("Measure the time for the k-mean ")
+print("###############################")
+print("Measure the time for the k-mean")
+print("###############################")
 
-print("Serial version:") 
+## Call the function k-means once and check the time consumption
+start_time <- Sys.time()
+kmeans_multi <- custom_kmeans_mp(scale_X, 2, 1234)
+end_time <- Sys.time()
+end_time - start_time
+## Time difference of 12.35497 secs for 500,000 rows in dataset
+## There is no improvement as the serial version took 5.312093 secs
+## It happens often that parallelization for quick tasks is not worth
 
-start_time_multi <- Sys.time()
-kmeans_opt <- custom_kmeans(scale_X, 2, 1234)
-end_time_multi <- Sys.time()
-end_time_multi-start_time_multi
+## Call the serial function k-means ten times and check the time consumption
+num_cores <- parallel::detectCores()
+par_cluster <- parallel::makeCluster(as.integer(num_cores/2))
+doParallel::registerDoParallel(par_cluster)
 
-print("Parallel multiprocessing:") 
+start_time <- Sys.time()
+parLapply(par_cluster, seq_len(10), 
+          fun=custom_kmeans, 
+          data=scale_X, 
+          seed_value=seed_value)
+end_time <- Sys.time()
+end_time - start_time
 
-start_time_multi <- Sys.time()
-kmeans_opt_parallel <- custom_kmeans_parallel(2, scale_X, 1234)
-end_time_multi <- Sys.time()
-end_time_multi-start_time_multi
+autoStopCluster(par_cluster)
+## Time difference of 1.416775 mins for 500,000 rows in dataset
+## It is a great improvement as it took 3.550611 mins for the serial version of lapply
 
+## Call the multiprocessing function k-means ten times and check the time consumption
+par_cluster <- parallel::makeCluster(as.integer(num_cores/2))
+doParallel::registerDoParallel(par_cluster)
+clusterExport(par_cluster, 'autoStopCluster', envir = environment())
+clusterEvalQ(par_cluster, {
+  library('parallel')
+  library('doParallel')
+})
+start_time <- Sys.time()
+parLapply(par_cluster, seq_len(10), 
+          fun=custom_kmeans_parallel, 
+          data=scale_X, 
+          seed_value=seed_value)
+end_time <- Sys.time()
+end_time - start_time
+
+autoStopCluster(par_cluster)
+## Time difference of 7.233679 mins for 500,000 rows in dataset
+## This version is even much worse than the serial one
+## This could happen because in parallel programming is not recommended
+## to apply in two levels (parLapply is one level and the function itself the other)
+
+print("####################################")
 print("Measure the time for the elbow graph")
+print("####################################")
 
-print("Serial version:") 
+print("Parallel multiprocessing:")
 
-start_time_multi <- Sys.time()
-elbow_graph_multi <- elbow_graph(scale_X, 10, 1234)
-end_time_multi <- Sys.time()
-end_time_multi-start_time_multi
-
-print("Parallel multiprocessing:") 
-
+## Call the multiprocessing function elbow graph and check the time consumption
 start_time_multi <- Sys.time()
 elbow_graph_multi <- elbow_graph_parallel(scale_X, 10, 1234)
 end_time_multi <- Sys.time()
 end_time_multi-start_time_multi
+## Time difference of 1.119786 mins for 500,000 rows in dataset
+## It considerably reduces the time to process the data compared with the serial version
+## which took 3.598459 mins to process the same data
 
 # 3. - Plot the first 2 dimensions of the clusters
 
@@ -140,7 +155,7 @@ legend("topleft", col=seq_len(optimal_k), legend=legend_names, lwd=2, bty = "n",
 
 # 4. - Find the cluster with the highest average price and print it.
 
-res_group_cluster <- data.frame(kmeans_opt_parallel) %>% 
+res_group_cluster <- data.frame(kmeans_multi) %>% 
   group_by(cluster)
 
 cluster_high_avg_price <- res_group_cluster %>% 

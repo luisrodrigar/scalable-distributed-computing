@@ -1,24 +1,6 @@
-library(dplyr)
-library(rgl)
-library(RColorBrewer)
-# install.packages("gplots")
-library("gplots")
+source('utils.R')
 
-data <- read.csv("../python/computers_dev.csv")
-
-# Delete the categorical variables as it is not possible to apply k-means on them
-X <- data %>% mutate(
-  cd = ifelse(cd == "no", 0, 1),
-  laptop = ifelse(laptop == "no", 0, 1)
-) %>% dplyr::select(-id)
-
-X_without_cat <- X %>% dplyr::select(-cd, -laptop, -trend) %>% as.matrix()
-
-n <- nrow(X_without_cat)
-p <- ncol(X_without_cat)
-
-# Scale computers data
-scale_X <- scale(X_without_cat)
+scale_X <- tidy_dataset(dev_dataset())
 
 # Part one – Serial version
 
@@ -26,45 +8,37 @@ scale_X <- scale(X_without_cat)
 
 # 2.- Implement the k-means algorithm
 
-# This function returns the same index when the parameters is an scalar
-# and returns a random index selected from the list passing as parameter
-
-random_index <- function(indexes, seed_value) {
-  if(length(indexes) == 1) {
-    return(indexes)
-  } else {
-    set.seed(seed = seed_value)
-    return(sample(x=indexes, size=1))
-  }
-}
-
-custom_kmeans <- function(X, k, seed_value) {
-  n <- nrow(X)
-  p <- ncol(X)
+custom_kmeans <- function(data, k, seed_value) {
+  n <- nrow(data)
+  p <- ncol(data)
   assig_cluster <- matrix(0, nrow=n, ncol=p+1)
   centroids_not_equal <- TRUE
   ite <- 1
   set.seed(seed = seed_value)
   centroids_index <- sample(x=n, size = k)
-  centroids <- rbind(X[centroids_index,])
+  centroids <- rbind(data[centroids_index,])
   while(centroids_not_equal) {
     distance_cluster <- matrix(0, nrow=n, ncol=k)
     for (i in seq_len(k)){
-      substracting_dist <- sweep(X, MARGIN=2, STATS=as.array(centroids[i,]), FUN = "-")
+      substracting_dist <- sweep(data, MARGIN=2, STATS=as.array(centroids[i,]), FUN = "-")
       distance_cluster[, i] <- sqrt(rowSums(substracting_dist^2))
     }
 
     cluster <- numeric(n)
     for (i in seq_len(n)){
       min_value_cluster_indexes <- which(distance_cluster[i,] == min(distance_cluster[i,]))
-      cluster[i] <- random_index(min_value_cluster_indexes, seed_value)
+      if(length(min_value_cluster_indexes) > 1) {
+        set.seed(seed = seed_value)
+        min_value_cluster_indexes = sample(x=min_value_cluster_indexes, size=1)
+      }
+      cluster[i] = min_value_cluster_indexes
     }
-    assig_cluster <- cbind(X, cluster)
+    assig_cluster <- cbind(data, cluster)
     
     new_centroids <- matrix(0, nrow=k, ncol=p)
     for (i in seq_len(k)){
       x_index_kth_cluster <- which(assig_cluster[, p+1]==i)
-      x_kth_cluster <- rbind(X[x_index_kth_cluster,])
+      x_kth_cluster <- rbind(data[x_index_kth_cluster,])
       kthcentroid <- apply(x_kth_cluster, MARGIN=2, FUN=mean)
       new_centroids[i,] <- kthcentroid
     }
@@ -83,25 +57,28 @@ elbow_graph <- function(X, total_k = 10, seed_value) {
   n <- nrow(X)
   p <- ncol(X)
   sum_sq_dist_total <- numeric(total_k)
+  
+  res_X <- lapply(seq_len(total_k), 
+                  FUN=custom_kmeans, 
+                  data=X, 
+                  seed_value=seed_value)
+  
   for (i in seq_len(total_k)) {
-    res_X <- custom_kmeans(X, i, seed_value)
     sum_sq_distance <- 0
     for(j in seq_len(i)) {
-      elements_cluster <- rbind(res_X[which(res_X[, p+1]==j),])
-      centroidekth <- apply(res_X[which(res_X[,p+1]==j),], MARGIN=2, FUN=mean)
-      distance_centroid <- rowSums((elements_cluster-t(replicate(nrow(elements_cluster), centroidekth)))^2)
+      res_X_i = res_X[[i]]
+      elements_cluster <- rbind(res_X_i[which(res_X_i[, p+1]==j),])
+      centroidekth <- apply(res_X_i[which(res_X_i[,p+1]==j),], MARGIN=2, FUN=mean)
+      distance_centroid <- rowSums((sweep(elements_cluster, MARGIN=2, STATS=as.array(centroidekth), FUN = "-"))^2)
       sum_sq_distance <- sum_sq_distance + sum(distance_centroid)
     }
     sum_sq_dist_total[i] = sum_sq_distance
   }
-  plot(x=seq_len(total_k), y=sum_sq_dist_total, type="l", col="blue", 
-       xlab="Number of clusters", ylab="Total Sum of Squares")
-  points(x=seq_len(total_k), y=sum_sq_dist_total)
   return(sum_sq_dist_total)
 }
 
 seed_value = 123456
-elbow_graph(scale_X, seed_value = seed_value)
+total_k = 10
 
 # 3.- Cluster the data using the optimum value using k-means.
 optimal_k <- 2
@@ -109,21 +86,47 @@ res <- custom_kmeans(scale_X, optimal_k, seed_value)
 
 # 4.- Measure time
 
+print("###############################")
+print("Measure the time for the k-mean")
+print("###############################")
+
+## Call the function k-means once and check the time consumption
 start_time <- Sys.time()
-res <- custom_kmeans(scale_X, optimal_k, seed_value)
+custom_kmeans(scale_X, 2, 1234)
 end_time <- Sys.time()
 end_time - start_time
+## Time difference of 5.312093 secs for 500,000 rows in dataset
 
+## Call the function k-means ten times and check the time consumption
 start_time <- Sys.time()
-elbow_graph(scale_X, seed_value = seed_value)
+lapply(seq_len(10), 
+       FUN=custom_kmeans, 
+       data=scale_X, 
+       seed_value=seed_value)
 end_time <- Sys.time()
 end_time - start_time
+## Time Time difference of 3.550611 mins for 500,000 rows in dataset
 
-microbenchmark::microbenchmark(custom_kmeans(scale_X, 2, 12345), times=10)
+print("####################################")
+print("Measure the time for the elbow graph")
+print("####################################")
+
+## Call the function elbow graph and check the time consumption
+start_time <- Sys.time()
+elbow_results <- elbow_graph(scale_X, seed_value = seed_value)
+end_time <- Sys.time()
+end_time - start_time
+## Time difference of 3.446955 mins for 500,000 rows in dataset
+## This makes sense as the lapply check above it took 3.55 min only for 
+## assessing the k-means for each k
+
+microbenchmark::microbenchmark(custom_kmeans(scale_X, 2, 12345), times=10, unit = "ns")
 
 # 5.- Plot the results of the elbow graph.
 
-elbow_graph(scale_X, seed_value = seed_value)
+plot(x=seq_len(total_k), y=elbow_results, type="l", col="blue", 
+     xlab="Number of clusters", ylab="Total Sum of Squares")
+points(x=seq_len(total_k), y=elbow_results)
 
 # 6.- Plot the first 2 dimensions of the clusters
 
@@ -137,7 +140,7 @@ legend("topleft", col=seq_len(optimal_k), legend=legend_names, lwd=2, bty = "n",
 
 colors_2 <- viridis::viridis(2)
 cluster_colors <- ifelse(res[, p +1] == 1, colors_2[1], colors_2[2])
-X_pca <- prcomp(X)
+X_pca <- prcomp(scale_X)
 plot3d(X_pca$x[,1], X_pca$x[,2], X_pca$x[,3], pch = 30, col=cluster_colors)
 legend3d("topright", legend = legend_names, col = colors_2, pch=19)
 
