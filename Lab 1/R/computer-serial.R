@@ -37,10 +37,7 @@ custom_kmeans <- function(data, k, seed_value) {
     
     new_centroids <- matrix(0, nrow=k, ncol=p)
     for (i in seq_len(k)){
-      x_index_kth_cluster <- which(assig_cluster[, p+1]==i)
-      x_kth_cluster <- rbind(data[x_index_kth_cluster,])
-      kthcentroid <- apply(x_kth_cluster, MARGIN=2, FUN=mean)
-      new_centroids[i,] <- kthcentroid
+      new_centroids[i,] <- colMeans(rbind(data[which(assig_cluster[, p+1]==i),]))
     }
 
     if(isTRUE(all.equal(new_centroids, centroids))) {
@@ -68,8 +65,8 @@ elbow_graph <- function(X, total_k = 10, seed_value) {
     for(j in seq_len(i)) {
       res_X_i = res_X[[i]]
       elements_cluster <- rbind(res_X_i[which(res_X_i[, p+1]==j),])
-      centroidekth <- apply(res_X_i[which(res_X_i[,p+1]==j),], MARGIN=2, FUN=mean)
-      distance_centroid <- rowSums((sweep(elements_cluster, MARGIN=2, STATS=as.array(centroidekth), FUN = "-"))^2)
+      centroidekth <- colMeans(elements_cluster)
+      distance_centroid <- rowSums((sweep(elements_cluster, STATS=as.array(centroidekth), MARGIN=2, FUN = "-"))^2)
       sum_sq_distance <- sum_sq_distance + sum(distance_centroid)
     }
     sum_sq_dist_total[i] = sum_sq_distance
@@ -86,16 +83,16 @@ res <- custom_kmeans(scale_X, optimal_k, seed_value)
 
 # 4.- Measure time
 
-print("###############################")
-print("Measure the time for the k-mean")
-print("###############################")
+####################################
+# Measure the time for the k-means #
+####################################
 
 ## Call the function k-means once and check the time consumption
 start_time <- Sys.time()
 custom_kmeans(scale_X, 2, 1234)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 5.312093 secs for 500,000 rows in dataset
+## Time difference of 5.407493 secs for 500,000 rows in dataset
 
 ## Call the function k-means ten times and check the time consumption
 start_time <- Sys.time()
@@ -107,16 +104,16 @@ end_time <- Sys.time()
 end_time - start_time
 ## Time Time difference of 3.550611 mins for 500,000 rows in dataset
 
-print("####################################")
-print("Measure the time for the elbow graph")
-print("####################################")
+########################################
+# Measure the time for the elbow graph #
+########################################
 
 ## Call the function elbow graph and check the time consumption
 start_time <- Sys.time()
 elbow_results <- elbow_graph(scale_X, seed_value = seed_value)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 3.446955 mins for 500,000 rows in dataset
+## Time difference of 3.131855 mins for 500,000 rows in dataset
 ## This makes sense as the lapply check above it took 3.55 min only for 
 ## assessing the k-means for each k
 
