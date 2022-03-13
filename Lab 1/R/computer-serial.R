@@ -1,6 +1,8 @@
 source('utils.R')
 
 scale_X <- tidy_dataset(dev_dataset())
+x <- nrow(scale_X)
+p <- ncol(scale_X)
 
 # Part one – Serial version
 
@@ -74,7 +76,7 @@ elbow_graph <- function(X, total_k = 10, seed_value) {
   return(sum_sq_dist_total)
 }
 
-seed_value = 123456
+seed_value = 1234
 total_k = 10
 
 # 3.- Cluster the data using the optimum value using k-means.

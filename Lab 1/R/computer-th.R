@@ -4,14 +4,16 @@ source("computer-serial.R")
 scale_X <- tidy_dataset(performance_dataset())
 x <- nrow(scale_X)
 p <- ncol(scale_X)
-optimal_k = 2
+optimal_k <- 2
+total_k <- 10
+seed_value <- 1234
 # Part three – Parallel implementation, threading
 
 # 1.- Write a parallel version of you program using multiprocessing
 
 custom_kmeans_th <- function(data, k, seed_value) {
-  num_cores <- parallel::detectCores()
-  par_cluster <- parallel::makeForkCluster(as.integer(num_cores-1))
+  num_cores <- as.integer(parallel::detectCores()/2)
+  par_cluster <- parallel::makeForkCluster(num_cores)
   doParallel::registerDoParallel(par_cluster)
   
   n <- nrow(data)
@@ -52,12 +54,12 @@ custom_kmeans_th <- function(data, k, seed_value) {
 elbow_graph_th <- function(X, total_k = 10, seed_value) {
   n <- nrow(X)
   p <- ncol(X)
-  num_cores <- detectCores()-1
+  num_cores <- detectCores()/2
   
   kmeans_data <- mclapply(X=seq_len(total_k), 
                           FUN=custom_kmeans,
                           data=X, 
-                          seed_value=1234,
+                          seed_value=seed_value,
                           mc.cores = num_cores)
   
   sum_sq_dist_total <- foreach(i = seq_len(total_k), .combine="c", 
@@ -83,37 +85,37 @@ elbow_graph_th <- function(X, total_k = 10, seed_value) {
 
 ## Call the function k-means once and check the time consumption
 start_time <- Sys.time()
-kmeans_th <- custom_kmeans_th(scale_X, optimal_k, 1234)
+kmeans_th <- custom_kmeans_th(scale_X, optimal_k, seed_value)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 13.32509 secs for 500,000 rows in dataset
+## Time difference of 11.13016 secs for 500,000 rows in dataset
 ## There is no improvement as the serial version took 5.407493 secs
 ## It happens often that parallelization for quick tasks is not worthy
 
 ## Call the serial function k-means ten times (FORKING) and check the time consumption
-num_cores <- detectCores()-1
+num_cores <- detectCores()/2
 start_time <- Sys.time()
 kmeans_list <- mclapply(X=seq_len(total_k), 
                         FUN=custom_kmeans,
                         data=scale_X, 
-                        seed_value=1234,
+                        seed_value=seed_value,
                         mc.cores = num_cores)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 1.541406 mins for 500,000 rows in dataset
+## Time difference of 1.151806 mins for 500,000 rows in dataset
 ## It is slightly better than the mp (SOKET) version
 ## This is something expected as this procedure copies the full data in the process
 
-###############################################
-# print("Measure the time for the elbow graph #
-###############################################
+########################################
+# Measure the time for the elbow graph #
+########################################
 
 ## Call the function elbow graph once and check the time consumption
 start_time <- Sys.time()
-elbow_results <- elbow_graph_th(scale_X, 10, 1234)
+elbow_results <- elbow_graph_th(scale_X, total_k, seed_value)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 1.584283 mins for 500,000 rows in dataset
+## Time difference of 1.155695 mins for 500,000 rows in dataset
 ## Slightly greater than the time obtained in the previous test as the 
 ## mclapply is inside the elbow praph function using threads (fork)
 

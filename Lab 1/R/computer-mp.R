@@ -2,14 +2,17 @@ source('utils.R')
 source("computer-serial.R")
 
 scale_X <- tidy_dataset(performance_dataset())
-
+x <- nrow(scale_X)
+p <- ncol(scale_X)
+total_k = 10
+optimal_k = 2
 # Part two – Parallel implementation, multiprocessing
 
 # 1.- Write a parallel version of you program using multiprocessing
 
 custom_kmeans_mp <- function(data, k, seed_value) {
-  num_cores <- parallel::detectCores()
-  par_cluster <- parallel::makeCluster(as.integer(num_cores/2))
+  num_cores <- as.integer(parallel::detectCores()/2)
+  par_cluster <- parallel::makeCluster(num_cores)
   doParallel::registerDoParallel(par_cluster)
   
   n <- nrow(data)
@@ -50,15 +53,15 @@ custom_kmeans_mp <- function(data, k, seed_value) {
 elbow_graph_mp <- function(X, total_k = 10, seed_value) {
   n <- nrow(X)
   p <- ncol(X)
-  num_cores <- detectCores()
-  par_cluster <- parallel::makeCluster(as.integer(num_cores-1))
+  num_cores <- as.integer(detectCores()/2)
+  par_cluster <- parallel::makeCluster(num_cores)
   doParallel::registerDoParallel(par_cluster)
   
   kmeans_data <- parLapply(cl=par_cluster, 
                            seq_len(total_k), 
                            custom_kmeans, 
                            data=X, 
-                           seed_value=1234)
+                           seed_value=seed_value)
   
   sum_sq_dist_total <- foreach(i = seq_len(total_k), .combine="c", .noexport='par_cluster') %:%
     foreach(j = seq_len(i), .combine="+") %dopar% {
@@ -82,10 +85,10 @@ elbow_graph_mp <- function(X, total_k = 10, seed_value) {
 
 ## Call the function k-means once and check the time consumption
 start_time <- Sys.time()
-kmeans_multi <- custom_kmeans_mp(scale_X, 2, 1234)
+kmeans_multi <- custom_kmeans_mp(scale_X, optimal_k, 1234)
 end_time <- Sys.time()
 end_time - start_time
-## Time difference of 12.67775 secs for 500,000 rows in dataset
+## Time difference of 13.29007 secs for 500,000 rows in dataset
 ## There is no improvement as the serial version took 5.407493 secs
 ## It happens often that parallelization for quick tasks is not worthy
 
@@ -95,7 +98,7 @@ par_cluster <- parallel::makeCluster(as.integer(num_cores-1))
 doParallel::registerDoParallel(par_cluster)
 
 start_time <- Sys.time()
-kmeans_list <- parLapply(par_cluster, seq_len(10), 
+kmeans_list <- parLapply(par_cluster, seq_len(total_k), 
           fun=custom_kmeans, 
           data=scale_X, 
           seed_value=seed_value)
@@ -103,7 +106,7 @@ end_time <- Sys.time()
 end_time - start_time
 
 autoStopCluster(par_cluster)
-## Time difference of 1.876425 mins for 500,000 rows in dataset
+## Time difference of 1.354716 mins for 500,000 rows in dataset
 ## It is a great improvement as it took 3.550611 mins for the serial version of lapply
 
 ## Call the multiprocessing function k-means ten times and check the time consumption
@@ -115,7 +118,7 @@ clusterEvalQ(par_cluster, {
   library('doParallel')
 })
 start_time <- Sys.time()
-parLapply(par_cluster, seq_len(10), 
+parLapply(par_cluster, seq_len(total_k), 
           fun=custom_kmeans_mp, 
           data=scale_X, 
           seed_value=seed_value)
@@ -123,7 +126,7 @@ end_time <- Sys.time()
 end_time - start_time
 
 autoStopCluster(par_cluster)
-## Time difference of 7.05514 mins for 500,000 rows in dataset
+## Time difference of 7.812078 mins for 500,000 rows in dataset
 ## This version is even much worse than the serial one
 ## This could happen because in parallel programming is not recommended
 ## to apply in two levels (parLapply is one level and the function itself the other)
@@ -136,10 +139,10 @@ print("Parallel multiprocessing:")
 
 ## Call the multiprocessing function elbow graph and check the time consumption
 start_time_multi <- Sys.time()
-elbow_graph_multi <- elbow_graph_mp(scale_X, 10, 1234)
+elbow_graph_multi <- elbow_graph_mp(scale_X, total_k, 1234)
 end_time_multi <- Sys.time()
 end_time_multi-start_time_multi
-## Time difference of 1.119786 mins for 500,000 rows in dataset
+## Time difference of 1.215241 mins for 500,000 rows in dataset
 ## It considerably reduces the time to process the data compared with the serial version
 ## which took 3.598459 mins to process the same data
 
