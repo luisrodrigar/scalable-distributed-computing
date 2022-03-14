@@ -148,7 +148,7 @@ if __name__== "__main__":
 
     # 5. - Print a heat map using the values of the clusters centroids.
 
-    viridis_pal = cm.get_cmap('plasma_r', 20)
+    plasma_pal = cm.get_cmap('plasma_r', 20)
     aggregations = {
         'price': 'mean',
         'speed': 'mean',
@@ -158,7 +158,7 @@ if __name__== "__main__":
         'screen': 'mean'
     }
     heatmap = res_df_group.agg(aggregations)
-    g = sns.clustermap(np.transpose(heatmap), cmap=viridis_pal)
+    g = sns.clustermap(np.transpose(heatmap), cmap=plasma_pal)
     plt.show()
 
 
