@@ -60,27 +60,44 @@ def elbow_graph(X, total_k, seed_value):
 
 
 if __name__ == "__main__":
-    df_without_cat = utils.tiny_data(utils.dev_dataset())
+    df_without_cat = utils.tiny_data(utils.perform_dataset())
     scaled_data = utils.scale_data(df_without_cat)
     (n, p) = scaled_data.shape
-
-    elbow_results = elbow_graph(scaled_data, 10, 1234)
     optiomal_k = 2
-    res = custom_kmeans(scaled_data, optiomal_k, 12345)
+    total_k = 10
+    seed_value = 1234
     
     ## 4. - Measure time
-    
-    start_time = time.time()
-    elbow_graph(scaled_data, 10, 1234)
-    print('--- %s seconds ---' % (time.time() - start_time))
 
+    ####################################
+    # Measure the time for the k-means #
+    ####################################
+
+    ## Call one the function custom_kmeans once and check the time consumption
     start_time = time.time()
-    custom_kmeans(scaled_data, optiomal_k, 12345)
-    print('--- %s seconds ---' % (time.time() - start_time))
+    res = custom_kmeans(scaled_data, optiomal_k, seed_value)
+    print('--- %s seconds (k-means) ---' % (time.time() - start_time))
+    ## Time spent: --- 8.744184732437134 seconds (k-means) --- for 500,000 rows in the dataset
+
+    ## Call the function custom_kmeans ten times for each k and check the time consumption
+    start_time = time.time()
+    kmeans_list = [custom_kmeans(scaled_data, k, seed_value) for k in range(1, total_k+1)]
+    print('--- %s seconds (k-means iter.) ---' % (time.time() - start_time))
+    ## --- 345.5383791923523 seconds (k-means iter.) ---for 500,000 rows in the dataset
+
+    ########################################
+    # Measure the time for the elbow graph #
+    ########################################
+
+    ## Call the function elbow graph once and check the time consumption
+    start_time = time.time()
+    elbow_results = elbow_graph(scaled_data, total_k, seed_value)
+    print('--- %s seconds (elbow graph) ---' % (time.time() - start_time))
+    ## --- 346.7162780761719 seconds (elbow graph) --- for 500,000 rows in the dataset
 
     ## 5. - Plot the results of the elbow graph.
 
-    plt.plot(np.array(range(10))+1, elbow_results, '-ob')
+    plt.plot(np.array(range(total_k))+1, elbow_results, '-ob')
     plt.xlabel('Number of clusters')
     plt.ylabel('Total Sum of Squares')
     plt.title('Elbow graph')
