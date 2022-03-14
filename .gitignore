@@ -40,3 +40,4 @@ vignettes/*.pdf
 
 # File system
 .DS_Store
+__pycache__/
