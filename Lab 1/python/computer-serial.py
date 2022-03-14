@@ -1,13 +1,10 @@
-from matplotlib.pyplot import axis
-from sklearn.preprocessing import StandardScaler
 from matplotlib import cm
 import numpy as np
 import pandas as pd
-import matplotlib as matplt
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.cluster import hierarchy
 import time
+import utils
 
 # Part one – Serial version
 
@@ -48,7 +45,7 @@ def custom_kmeans(X, k, seed_value):
 ## 3.- Cluster the data using the optimum value using k-means.
 
 def elbow_graph(X, total_k, seed_value):
-    (n, p) = X.shape
+    (_, p) = X.shape
     sum_sq_dist_total = np.zeros(total_k)
     for i in range(1, total_k+1):
         res_X = custom_kmeans(X, i, seed_value)
@@ -63,12 +60,8 @@ def elbow_graph(X, total_k, seed_value):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('computers_dev.csv')
-    df_without_cat = df.drop(['id', 'laptop', 'cd', 'trend'], axis=1)
-
-    scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(df_without_cat)
-
+    df_without_cat = utils.tiny_data(utils.dev_dataset())
+    scaled_data = utils.scale_data(df_without_cat)
     (n, p) = scaled_data.shape
 
     elbow_results = elbow_graph(scaled_data, 10, 1234)
