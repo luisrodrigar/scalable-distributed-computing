@@ -15,7 +15,6 @@ custom_kmeans <- function(data, k, seed_value) {
   p <- ncol(data)
   assig_cluster <- matrix(0, nrow=n, ncol=p+1)
   centroids_not_equal <- TRUE
-  ite <- 1
   set.seed(seed = seed_value)
   centroids_index <- sample(x=n, size = k)
   centroids <- rbind(data[centroids_index,])
@@ -47,7 +46,6 @@ custom_kmeans <- function(data, k, seed_value) {
     } else {
       centroids = new_centroids
     }
-    ite = ite + 1
   }
   return(assig_cluster)
 }

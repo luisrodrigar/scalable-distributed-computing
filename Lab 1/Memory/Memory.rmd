@@ -1,17 +1,15 @@
 ---
-title: "LAB1. K-MEANS PARALLELIZATION in R and PYTHON "
-subtitle: "Memory"
-author: "Luis Angel Rodriguez Gracia, Sara Dovalo del Río and Alejandra Estrada Sanz"
-date: "15/03/2022"
-header-includes:
-  - \usepackage{algorithm}
-  - \usepackage{algpseudocode}
-output: pdf_document
+title: "Lab 1: Parallelization (Multiprocessing and Threading)"
+subtitle: "Scalable and Distributed Computing"
+author: "Luis Ángel Rodríguez García, Sara Dovalo del Río and Alejandra Estrada Sanz"
+date: "13/03/2022"
+output: 
+  pdf_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(reticulate)
 ```
 
 ## 1. Serial version
@@ -26,19 +24,17 @@ To implement this algorithm we have created a function called `custom_kmeans` wh
 - The number of groups or clusters into which you want to divide our dataset, `k`.
 - The seed value that we are going to use, `seed_value`.
 
-The first thing we do in our function is determine the number of rows and columns that has our dataset, `n` and `p`, and then we create the `assig_cluster` matrix with dimensions similar to our dataset but with one more column in which we will specify to which cluster each of the points of our dataset belongs. The next step is to create a logical scalar, `centroids_not_equal`, which we will default to as TRUE. Then we have created the numerical scalar, `ite`, with the aim of measuring the interactions that our function needs to carry out. Next we set the seed value we are going to use, `seed_value`, and create the `centroids_index` vector by randomly choosing `k` numbers from the `n` observations in our dataset. Once the centroids have been randomly chosen, we collect in the `centroids` matrix, of dimensions `k` and `p`, all them components.
+The first thing we do in our function is determine the number of rows and columns that has our dataset, `n` and `p`, and then we initialize the `assig_cluster` matrix with dimensions similar to our dataset but with one more column in which we will specify to which cluster each of the points of our dataset belongs. The next step is to create a logical scalar, `centroids_not_equal`, which we initialize with the default value TRUE. Next we set the seed value we are going to use, `seed_value`, and create the `centroids_index` vector by randomly choosing `k` numbers from the `n` observations in our dataset. Once the centroids have been randomly chosen, we collect in the `centroids` matrix, of dimensions `k` rows and `p` columns, all of them.
 
-The next step is to create a `while` loop that as long as `centroids_not_equal` is TRUE it will continue to execute indefinitely and inside this loop we create the `distance_cluster` matrix of dimensions `n` and `k`.
+The next step is to create a `while` loop that as long as the condition `centroids_not_equal` is equal to TRUE it will continue to execute itself indefinitely. Inside the while loop, the `distance_cluster` matrix is initialized with dimensions `n` rows and `k` columns. Next task is about to implement a for-loop that iterates through the values of `k`, inside which we fill the `distance_cluster` matrix with the euclidean distance from each point to each of the centroids that we have randomly chosen before.
 
-Next, we create another loop, inside the first one, that goes through the values of `k`, inside which we fill the `distance_cluster` matrix with the distance in modulus from each point to each of the centroids that we have randomly chosen before.
+We defined the second for-loop, inside the while loop, in order to create the `cluster` vector of length `n`. Within this second for, we fill the `cluster` vector with the cluster number to which each point belongs, that is, the cluster to which the distance is minimal. To implement this step in Python we have needed a single line of code, while in R we have needed a few more and make use of the `if` function. This is due to the possibility of having the same minimum distance, then an index is chosen randomly. Once `cluster` is filled in, we close the second for-loop and we merge this data into the `assig_cluster` matrix, containing our dataset `X` and one more column with the values of the `cluster` vector. and we create the `new_centroids` matrix of equal dimensions to the matrix `centroids`.
 
-We close the second loop, create the `cluster` vector of length `n`, and open a third loop inside the `while` loop, which iterates through the values of `n`. Inside this third loop we fill the `cluster` vector with the cluster number to which each point belongs, that is, the cluster to which the distance is minimal. To implement this step in Python we have needed a single line of code, while in R we have needed a few more and make use of the `if` function. Once `cluster` is filled in, we close the third loop, we integrate this data into the `assig_cluster` matrix, adding to our dataset `X` one more column with the values of the `cluster` vector, and we create the `new_centroids` matrix of equal dimensions to the matrix `centroids`.
+Next we create a third for-loop, also inside the while, that goes through the values of `k` again. This loop will determine the `new_centroids` matrix which contains the i-th new centroid of this iteration that is formed each of them by some values obtained by means of calculating the mean for each variable in each of the clusters assigned in the previous step. In this case, implementing the calculation of the coordinates of the new centroids in R requires a single line of code (using `colMeans`), while this time it is in Python where we have needed a few more lines (using `np.mean`).
 
-Next we create a fourth loop, also inside the first one, that goes through the values of `k` again, by means this loop we fill the `new_centroids` matrix with the coordinates of the new centroids, that is, the centroids of the clusters that we have just created. These coordinates are calculated by taking the mean of each variable in each of the clusters assigned in the previous step. In this case, implementing the calculation of the coordinates of the new centroids in R requires a single line of code, while this time it is in Python where we have needed intermediate steps to implement this code.
+We close this third for-loop and use the `if` function to change the value of the variable `centroids_not_equal` to false as long as the matrix `centroids` and the matrix `new_centroids` are the same, meaning that it contains the same data. If this condition does not occur, we overwrite the matrix `centroids` with the values of the matrix `new_centroids`. With these lines of code what we do is to compare the initial centroids with those that we have created after assigning the clusters to the points, the idea is that each time we execute this process the clusters are more and more optimal and more differentiated from each other, so the initial and final centroids will change, and the loop will continue executing itself until the algorithm finds the optimal clusters. At that moment the centroids from which we started the iteration must be the same as those calculated applying the means to the columns of each clusters, producing the exit of the `while` loop.
 
-We close this fourth loop and use the `if` function to change the value of `centroids_not_equal` to FALSE if the vector `centroids` and the vector `new_centroids` are equal and if this condition does not occur with the command `else` we overwrite the vector `centroids` with the values of the vector `new_centroids`. With these four lines of code what we get is to compare the initial centroids with which we have started the process with those that we have created after assigning the clusters to the points, the idea is that each time we execute this process the clusters are more and more optimal and more differentiated from each other, so the initial and final centroids will change, and the loop will continue executing until we find the optimal clusters and the centroids from which we started are the same as those calculated through the means of the clusters, since the arrangement of the clusters, having reached the optimal shape, remains unchanged. At this moment the logical vector `centroids_not_equal` will take the value FALSE, the initial `while` loop will stop executing and we will have obtained our optimal clusters.
-
-Before closing the `while` loop we have been adding 1 to the scaling `ite` to be able to measure in how many iterations the process is carried out. Finally, outside the loop, we ask the function to return the `assig_cluster` matrix, that is, our original dataset but with one more column where the final cluster to which each point belongs is specified.
+Last but not least, once the execution of the program is out of the while loop, the function returns the `assig_cluster` matrix, that is, our original dataset with one more column about the associated cluster for each observation.
 
 ### 1.2. Construct the elbow graph
 
@@ -235,12 +231,33 @@ These parts correspond with the same code described in the serial part but with 
 
 In this section we have implemented two different approaches depending on the programming language we are working with. 
 
-First we are going to describe the case when the programming language is R, it doesn't allow to use a proper thread, then what we are going to use are clusters of type _fork_. This type of parallelization copies the entire current version of R and moves it to a new core. They are usually faster than sockets, the approach described in the multiprocessing point, nevertheless they are only available in POSIX systems (MacOS, Linux and so on). The way we have implemented them is very similar that the way we have implemented the multiprocessing, although in this case we have to explicitly indicate that we want forking clusters.
+First we are going to describe the case when the programming language is R which doesn't allow to use a proper thread implementation, then what we are going to use are clusters of type _fork_. This type of parallelization copies the entire current version of R and moves it to a new core. They are usually faster than sockets, the approach described in the previous point about multiprocessing. Nevertheless they are only available in POSIX systems (MacOS, Linux and so on), then it is not possible to run them on Windows. The way we have implemented this approach is very similar that the way we have implemented the multiprocessing but in this case we have to explicitly indicate that we want forking clusters.
+
+The next technique we are going to shown is the threading approach that Python provides. There are two modules that support the usage of threads: `Threading` and `Thread`. Using them, we can create and manage threads that are by definition non-deterministic and always performed by the operating system, allowing to the programmer to explicitly defining them. The bad thing is that the performance is not very optimized as we will see this in the next point.
 
 ### 3.2. Measure the time and optimize the program to get the fastest version you can
+
+Regarding the measurement of time, our results for a dataset of 500,000 rows have been shown that:
+
+- For the `custom_kmeans_th` function:
+  - In R
+    - Call the function once took 11.13016 secs
+    - Call the function ten times (`mclapply` -forking-) took 1.151806 mins
+  - In Python:
+    - Call the function once took 125.03917098045349 seconds
+- For the `elbow_graph_th` function:
+  - In R
+    - Call the function elbow graph took 1.155695 mins
+  - In Python
+    - Call the function once took 338.7781488895416 seconds
+    
+As we could expect, we have seen that the times have considerably reduced when the forking approach is used in R. On the other hand, the use of threads in just one core in Python doesn't produce a good performance, being the times consumption much more worse. 
 
 ### 3.3. Plot the first 2 dimensions of the clusters
 
 ### 3.4. Find the cluster with the highest average price and print it
 
 ### 3.5. Print a heat map using the values of the clusters centroids
+
+These parts correspond with the same code described in the serial part but with the data obtained from the threading version. They shows the same behavior, checked with a dataset of 500,000 rows. The code files contains all the logic to generate these graphs.
+

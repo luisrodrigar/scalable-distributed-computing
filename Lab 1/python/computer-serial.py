@@ -17,7 +17,6 @@ def custom_kmeans(X, k, seed_value):
     (n, p) = X.shape
     assign_cluster = np.zeros((n, p+1))
     centroids_not_equal = True
-    ite = 0
     np.random.seed(seed_value)
     centroids_index = np.random.choice(range(n), k)
     centroids = X[centroids_index, :]
@@ -39,7 +38,6 @@ def custom_kmeans(X, k, seed_value):
             centroids_not_equal = False
         else:
             centroids = new_centroids
-        ite += 1
     return assign_cluster
 
 ## 3.- Cluster the data using the optimum value using k-means.
