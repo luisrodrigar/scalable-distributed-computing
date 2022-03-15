@@ -16,7 +16,7 @@ library(reticulate)
 
 ## 1. Serial version
 
-### 1.1. k-means algorithm
+### 1.1. Implement the k-means algorithm
 
 The k-means algorithm is a clustering method whose objective is to divide a data set into a given number of groups, where each observation in the data set belongs to the group whose mean value is closest to that observation.
 
@@ -40,7 +40,7 @@ We close this fourth loop and use the `if` function to change the value of `cent
 
 Before closing the `while` loop we have been adding 1 to the scaling `ite` to be able to measure in how many iterations the process is carried out. Finally, outside the loop, we ask the function to return the `assig_cluster` matrix, that is, our original dataset but with one more column where the final cluster to which each point belongs is specified.
 
-### 1.2. Elbow graph
+### 1.2. Construct the elbow graph
 
 The elbow graph is a method used to determine the optimal number of clusters for a set of data. The resultant plot represents the sum of squared distances between points belonging to the same cluster over the total number of clusters.
 
@@ -202,8 +202,6 @@ On the other hand to perform the elbow graph using multiprocessing we build the 
 In this section we have implemented two different approaches depending on the programming language we are working with. 
 
 First we are going to describe the case when the programming language is R, it doesn't allow to use a proper thread, then what we are going to use are clusters of type _fork_. This type of parallelization copies the entire current version of R and moves it to a new core. They are usually faster than sockets, the approach described in the multiprocessing point, nevertheless they are only available in POSIX systems (MacOS, Linux and so on). The way we have implemented them is very similar that the way we have implemented the multiprocessing, although in this case we have to explicitly indicate that we want forking clusters.
-
-
 
 ### 3.2. Measure the time and optimize the program to get the fastest version you can
 
