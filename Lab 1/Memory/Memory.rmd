@@ -137,7 +137,7 @@ In this graphs we can observe the dependency of belonging to each cluster depend
 
 ## 2. Parallel implementation, multiprocessing
 
-To do this in R we will use mainly two libraries: "doParallel" and "foreach".
+To do this in R we will use mainly two libraries: `doParallel` and `foreach`.
 
 The first one is a library that is oriented to the parallelization of problems where each thread performs its work independently, that is to say that they do not need to communicate in any way. The basic computational model that we should follow is:
 
@@ -147,7 +147,7 @@ The first one is a library that is oriented to the parallelization of problems w
 4. Wait for all threads to finish and get the results.
 5. Close the processes (threads).
 
-The second library, "foreach" allows to process loops in parallel and also needs the "doParallel" library to make the process in parallel using the registerDoParallel() function.  One of the benefits of this library is that you can execute commands using the foreach() function and do them in parallel using the %dopar% command. In addition, this foreach() function has a ".combine" argument that is used to specify the type of output argument needed (c: vector, rbind: matrix, list:list, data.frame: output of type data.frame...).
+The second library, `foreach` allows to process loops in parallel and also needs the `doParallel` library to make the process in parallel using the registerDoParallel() function.  One of the benefits of this library is that you can execute commands using the `foreach()` function and do them in parallel using the `%dopar%` command. In addition, this `foreach()` function has a `.combine` argument that is used to specify the type of output argument needed (c: vector, rbind: matrix, list:list, data.frame: output of type data.frame...).
 
 As we know there are two ways to perform parallelism in R: 
 
@@ -160,40 +160,74 @@ We will see that if a script takes a few seconds, parallelization is probably no
 
 ### 2.1. Write a parallel version of you program using multiprocessing
 
-Our function in this case using multiprocessing will be called **"custom_kmeans_mp "** which, as we said before, will be in charge of dividing our dataset into a certain number of groups, where each observation of the dataset belongs to the group whose average value is closest to that observation. 
+Our function in this case using multiprocessing will be called `custom_kmeans_mp` which, as we said before, will be in charge of dividing our dataset into a certain number of groups, where each observation of the dataset belongs to the group whose average value is closest to that observation. 
 
-The first thing we will do is to detect the number of logical cores in the machine using detectCores(). We have selected half of the cores since this is usually what works best to keep the operating system and the rest of the tasks of our machine running normally. To this quantity we will assign the name "num_cores".
+The first thing we will do is to detect the number of logical cores in the machine using `detectCores()`. We have selected half of the cores since this is usually what works best to keep the operating system and the rest of the tasks of our machine running normally. To this quantity we will assign the name `num_cores`.
 
-Next, we will assign a new variable "par_cluster" to create the cluster, where we specify the number of threads that we are going to use by means of the function makeCluster().
+Next, we will assign a new variable `par_cluster` to create the cluster, where we specify the number of threads that we are going to use by means of the function makeCluster().
 
-In what follows, we use the "foreach" library, which, as we said before, allows us to process loops in parallel. 
+In what follows, we use the `foreach` library, which, as we said before, allows us to process loops in parallel. 
 
-That is, we will go from calculating the distance in modulus from each point to each of the centroids (previously chosen randomly) using a loop to perform it in parallel using the foreach() function and we will choose the minimum distance, now using parApply() (function are similar to those known from the base of R that takes care of all the heavy work in the parelization) instead of performing a loop going through each of the calculated distances.
+That is, we will go from calculating the distance in modulus from each point to each of the centroids (previously chosen randomly) using a loop to perform it in parallel using the `foreach()` function and we will choose the minimum distance, now using `parApply()` (function are similar to those known from the base of R that takes care of all the heavy work in the parelization) instead of performing a loop going through each of the calculated distances.
 
-We then calculate the cluster number to which each point belongs, i.e. the cluster to which the distance is smaller and store it in the variable "cluster" using the max.col() function. As in the serial case, we add a column to our dataset (variable "assig_cluster") where each point is assigned the cluster for which its distance to the respective centroid is the minimum.
+We then calculate the cluster number to which each point belongs, i.e. the cluster to which the distance is smaller and store it in the variable `cluster` using the `max.col()` function. As in the serial case, we add a column to our dataset (variable `assig_cluster`) where each point is assigned the cluster for which its distance to the respective centroid is the minimum.
 
-Another modification would be to calculate the new centroids instead of using an iterative process, also using the foreach() function.
+Another modification would be to calculate the new centroids instead of using an iterative process, also using the `foreach()` function.
 
-Finally we will use the autostopCluster() function which must be executed to close all R environments created in the threads (if this is not done, our subsequent procedures may present problems).
+Finally we will use the `autostopCluster()` function which must be executed to close all R environments created in the threads (if this is not done, our subsequent procedures may present problems).
 
 
-On the other hand to perform the elbow graph using multiprocessing we build the function **"elbow_graph_mp "** and which differs from the previous function performed serially in the following aspects:
+On the other hand to perform the elbow graph using multiprocessing we build the function `elbow_graph_mp` and which differs from the previous function performed serially in the following aspects:
 
-- As in the case of the previous function, we will first detect the number of logical cores in the machine using detectCores(). We have selected half of the cores and to this amount we will assign the name "num_cores".
+- As in the case of the previous function, we will first detect the number of logical cores in the machine using `detectCores()`. We have selected half of the cores and to this amount we will assign the name `num_cores`.
 
-- Then we apply to our dataset the function "custom_kmeans" for each of the values of "total_k" (column corresponding to the cluster assigned to each point). To apply this function in parallel we will use the function "parLapply" in R, while in Python....
+- Then we apply to our dataset the function `custom_kmeans` for each of the values of `total_k` (column corresponding to the cluster assigned to each point). To apply this function in parallel we will use the function `parLapply` in R, while in Python....
 
-- The iterative process performed to obtain "sum_sq_dist_total" (squared distances between each point and the centroid of the cluster associated to that point for each of the cluster values we want to study) in our serial version will be replaced by the foreach() function which will allow us to determine the optimal number of clusters for our dataset by command "%dopar%" which performs the same steps as the "elbow_graph" function but in parallel.
+- The iterative process performed to obtain `sum_sq_dist_total` (squared distances between each point and the centroid of the cluster associated to that point for each of the cluster values we want to study) in our serial version will be replaced by the `foreach()` function which will allow us to determine the optimal number of clusters for our dataset by command `%dopar%` which performs the same steps as the `elbow_graph` function but in parallel.
 
-- Finally we will use the autostopCluster() function which must be executed to close all the R environments created in the threads.
+- Finally we will use the `autostopCluster()` function which must be executed to close all the R environments created in the threads.
 
 ### 2.2. Measure the time and optimize the program to get the fastest version you can
+
+Regarding the measurement of time, our results for a dataset of 500,000 rows have been shown that:
+
+- For the `custom_kmeans_md` function:
+  - In R
+    - Call the function once took 13.29007 seconds
+    - Call the function ten times took 7.812078 minutes
+  - In Python:
+    - Call the function once took  seconds
+    - Call the function ten times took  seconds
+- For the `elbow_graph` function:
+  - In R
+    - Call the function elbow graph took 1.215241 minutes
+  - In Python
+    - Call the function once took  seconds
+
+Some interesting conclusions can be drawn from these results:
+
+- In R
+
+  - When we call the function `custom_kmeans_md` once and check the time      consumption, the time difference of 13.29007 secs for 500000 rows in      dataset. There is no improvement as the serial version took 5.407493      secs. It happens often that parallelization for quick tasks is not        worthy.
+
+  - On the other hand if we call the serial function `custom_kmeans` ten      times and check the time consumption, it is a great improvement as it     took 3.550611 minutes for the serial version of `lapply`.
+  
+  - Finally, if we call the multiprocessing function, `custom_kmeans_md`,     ten times and check the time consumption we will can see that the time     difference is 7.812078 minutes for 500000 rows in dataset.
+    This version is even much worse than the serial one. This could happen     because in parallel programming is not recommended to apply in two        levels (`parLapply` is one level and the function itself the other).
+    
+  - With regard to the function of the elbow graph, `elbow_graph`, we can     say that it considerably reduces the time to process the data compared     with the serial version which took 3.598459 minutes to process the        same data.
+
+
+- In Python
+
 
 ### 2.3. Plot the first 2 dimensions of the clusters
 
 ### 2.4. Find the cluster with the highest average price and print it
 
 ### 2.5. Print a heat map using the values of the clusters centroids
+
+These parts correspond with the same code described in the serial part but with the data obtained from the multiprocessing version. They shows the same behavior, checked with a dataset of 500000 rows. The code files contains all the logic to generate these graphs.
 
 ## 3. Parallel implementation, threading
 
