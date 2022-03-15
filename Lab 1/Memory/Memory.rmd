@@ -16,7 +16,7 @@ library(reticulate)
 
 ## 1. Serial version
 
-### 1.1. k-means algorithm
+### 1.1. Implement the k-means algorithm
 
 El algoritmo k-means es un método de agrupamiento cuyo objetivo es dividir un conjunto de datos en un determinado número de grupos, donde cada observación del conjunto de datos pertenece al grupo cuyo valor medio es más cercano a dicha observación.
 
@@ -36,7 +36,7 @@ Cerramos este cuarto bucle y utilizamos la función "if" para cambiar el valor d
 
 Antes de cerrar el bucle "while" hemos ido sumando 1 al escalar "ite" para poder ir midiendo en cuantas iteracciones se lleva a cabo el proceso. Por último, fuera del bucle pedimos a la función que nos devulva la matriz "assig_cluster", es decir, nuestro dataset orginal pero con una columna más donde se especifíca el cluster final al que pertenece cada punto.
 
-### 1.2. Elbow graph
+### 1.2. Construct the elbow graph
 
 The elbow graph is a method used to determine the optimal number of clusters for a set of data. The resultant plot represents the sum of squared distances between points belonging to the same cluster over the total number of clusters.
 
