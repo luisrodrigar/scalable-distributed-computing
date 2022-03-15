@@ -54,35 +54,37 @@ The next step is about executing the method k-means, which we have already imple
 
 In R we have used the method `lapply` to execute this method as many times as the value of the parameter `total_k` is defined, meanwhile, in Python this functions is not available and we need to defined an explicit for-loop which iterates `total_k` times.
 
-The final step is to calculate the sum of squared distances for each possible number of groups using the list of matrix obtained in the previous step. This will be the result of executing the method `elbow_graph`. Therefore, we have defined 1 for-loops, iterating for each possible number of clusters, and one nested loop which iterates from each cluster inside a specific possible number of total clusters. In this last loop we calculate each centroid per group applying the average function per columns and their distances to each point belonging to this group. The resultant is the sum of squared distances for the k-th number of groups.
+The final step is to calculate the sum of squared distances for each possible number of groups using the list of matrices obtained in the previous step (this will be the result of executing the method `elbow_graph`). Therefore, we have defined a for-loops, iterating for each possible number of clusters, and one nested loop which iterates over each cluster inside. In this last loop we calculate each centroid, applying the average function per columns, and their distances to each point belonging to this group. The resultant is the sum of squared distances for the k-th number of groups.
 
 Once the previous step is completed, we will have a list contained the sum of squared distances for each possible group. For instance, if we pick the element of the position 2 in the resultant list we will have the sum of squared distance associated to the result of executing the k-means with k equal to 2.
 
 ### 1.3. Cluster the data using the optimum value using k-means
 
-Once the "custom_kmeans" function has been implemented, we proceed to apply it to our dataset. To do this we must make some previous modifications in our dataset, such as scaling the data so that some variables do not have more weight than others when measuring the distance and eliminate the categorical variables from the analysis since it is not possible to measure the distance between categories.
+At this point, we have already implemented the serial versions of the `custom_kmeans` and the `elbow_graph` functions, then we proceed to process our dataset using them. To do this we have to make beforehand some tweaks in our dataset:
 
-After making these changes, we have proceeded to apply the "custom_kmeans" function to our dataset for a value of "k" equal to 2, since, as we will see later when we represent the elbow graph, 2 is the optimal number of clusters for our dataset.
+- Scaling the data, then all the variables do have the same weight in out dataset. There won't be some variables with more "power" than others when the distance is measured. 
+- Dropping the categorical variables from the analysis since the algorithm is not working properly when categorical variables are presented. It is not possible to measure the distance between categories-. 
+
+After making these changes, we have proceeded to apply the `custom_kmeans` function to our dataset for a value of `k` equal to 2, since, as we will see later when we represent the elbow graph, 2 is the optimal number of clusters for our dataset.
 
 ### 1.4. Measure time
 
-Regarding the measurement of time, our results have been the following for the "custom_kmeans" function:
+Regarding the measurement of time, our results for a dataset of 500,000 rows have been shown that:
 
-• Call the function k-means once for 500,000 rows in dataset in R: 5.407493 seconds
+- For the `custom_kmeans` function:
+  - In R
+    - Call the function once took 5.407493 seconds
+    - Call the function ten times took 213.03666 seconds
+  - In Python:
+    - Call the function once took 8.744184732437134 seconds
+    - Call the function ten times took 345.5383791923523 seconds
+- For the `elbow_graph` function:
+  - In R
+    - Call the function elbow graph took 187.9113 seconds
+  - In Python
+    - Call the function once took 346.7162780761719 seconds
 
-• Call the function k-means ten times for 500,000 rows in dataset in R: 213.03666 seconds
-
-• Call the function k-means once for 500,000 rows in dataset in Python: 8.744184732437134 seconds
-
-• Call the function k-means ten times for 500,000 rows in dataset in Python: 345.5383791923523 seconds
-
-While for the "elbow_graph" function we have obtained the following times:
-
-• Call the function elbow graph for 500,000 rows in dataset in R: 187.9113 seconds
-
-• Call the function elbow graph for 500,000 rows in dataset in Python: 346.7162780761719 seconds
-
-These results make sense since, given that for the "elbow_graph" function we have determined that the maximum number of clusters to study is 10, each time we execute "elbow_graph" with "total_k" = 10 it is being executed 10 times the "custom_kmeans" function, so the execution time of the "elbow_graph" function with "total_k" = 10 and the execution time of 10 times the "custom_kmeans" function are similar.
+These results make sense since we have assessed the time consumption when we call 10 times the `custom-kmeans` and the result is slightly smaller than the time used to execute the method `elbow_graph` which calls the function also k times.
 
 ### 1.5. Plot the results of the elbow graph
 
