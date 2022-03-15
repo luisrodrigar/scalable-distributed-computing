@@ -22,8 +22,21 @@ Hemos denominado  "elbow_graph" a la función que hemos construido para crear nu
 
 El algoritmo k-means es un método de agrupamiento cuyo objetivo es dividir un conjunto de datos en un determinado número de grupos, donde cada observación del conjunto de datos pertenece al grupo cuyo valor medio es más cercano a dicha observación.
 
-Para implementar este algoritmo hemos creado una función llamada "custom_kmeans" la cuál depepende de tres parámetros, el dataset a estudiar, "X", el número de grupos o clusters en lo que se quiere dividir dicho dataset, "k", y la semilla que vamos a utilizar, "seed_value". Lo primero que hacemos es determinar el número de filas y columnas que tiene nuestro dataset, "n" y "p", y a continuación creamos la matriz "assig_cluster" de dimensiones similares a nuestro dataset pero con una columna más en la cual especificaremos a que cluster pertenece cada uno de los puntos de nuestro dataset. El siguiente paso es crear un escalar lógico, "centroids_not_equal", al que designaremos por defecto el valor TRUE. Luego hemos creado el escalar numérico, "ite", con el objetivo de ir midiendo las interacciones que necesita llevar a cabo nuestra función. Seguidamente establecemos la semillas que vamos a utilizar, "seed_value", y creamos el vector "centroids_index" eligiendo aleatoriamente "k" números de entre las "n" observaciones de nuestro dataset. Una vez escogidos aleatoriamente los centroides recogemos en la matriz "centroids", de dimensiones "k" y "p", todas las componentes de dichos centroides. El siguiente paso es crear un bucle que mientras "centroids_not_equal" sea TRUE seguirá ejecutandose indefinidamente y dentro de este bucle creamos la matriz "distance_cluster" de dimensiones "n" y "k". A continuación creamos otro bucle, dentro del primero, que recorre los valores de "k", dentro del cual rellenamos la matriz "distance_cluster" con la distancia en módulo de cada punto a cada uno de los centroides que hemos elegido antes aleatoriamente. Cerramos el segundo bucle, creamos el vector "cluster" de longitud "n" y abrimos un tercer bucle dentro del bucle "while", el cual recorre los valores de "n". Dentro de este tercer bucle rellenamos el vector "cluster" con el número de cluster al cuál pertenece cada punto, es decir, el cluster al cual la distancia es menor, para implementar este paso en Python hemos necesitado de una única linea de código, mientras que en R han sido necesarias algunas más y hacer uso de la función "if". Una vez rellenado "cluster" cerramos el tercer bucle, integramos estos datos en la matriz "assig_cluster" añadiendo a nuestro dataset "X" una columna más con los valores del vector "cluster", y creamos la matriz "new_centroids" de iguales dimesiones a la matriz "centroids". Seguidamente creamos un cuarto bucle, tambien dentro del primero, que recorre de nuevo los valores de "k"...
+Para implementar este algoritmo hemos creado una función llamada "custom_kmeans" la cuál depende de tres parámetros, el dataset a estudiar, "X", el número de grupos o clusters en lo que se quiere dividir dicho dataset, "k", y la semilla que vamos a utilizar, "seed_value".
 
+Lo primero que hacemos en nuestra función es determinar el número de filas y columnas que tiene nuestro dataset, "n" y "p", y a continuación creamos la matriz "assig_cluster" de dimensiones similares a nuestro dataset pero con una columna más en la cual especificaremos a que cluster pertenece cada uno de los puntos de nuestro dataset. El siguiente paso es crear un escalar lógico, "centroids_not_equal", al que designaremos por defecto el valor TRUE. Luego hemos creado el escalar numérico, "ite", con el objetivo de ir midiendo las interacciones que necesita llevar a cabo nuestra función. Seguidamente establecemos la semillas que vamos a utilizar, "seed_value", y creamos el vector "centroids_index" eligiendo aleatoriamente "k" números de entre las "n" observaciones de nuestro dataset. Una vez escogidos aleatoriamente los centroides recogemos en la matriz "centroids", de dimensiones "k" y "p", todas las componentes de dichos centroides.
+
+El siguiente paso es crear un bucle "while" que mientras "centroids_not_equal" sea TRUE seguirá ejecutandose indefinidamente y dentro de este bucle creamos la matriz "distance_cluster" de dimensiones "n" y "k".
+
+A continuación creamos otro bucle, dentro del primero, que recorre los valores de "k", dentro del cual rellenamos la matriz "distance_cluster" con la distancia en módulo de cada punto a cada uno de los centroides que hemos elegido antes aleatoriamente.
+
+Cerramos el segundo bucle, creamos el vector "cluster" de longitud "n" y abrimos un tercer bucle dentro del bucle "while", el cual recorre los valores de "n". Dentro de este tercer bucle rellenamos el vector "cluster" con el número de cluster al cuál pertenece cada punto, es decir, el cluster al cual la distancia es menor. Para implementar este paso en Python hemos necesitado de una única linea de código, mientras que en R han sido necesarias algunas más y hacer uso de la función "if". Una vez rellenado "cluster" cerramos el tercer bucle, integramos estos datos en la matriz "assig_cluster" añadiendo a nuestro dataset "X" una columna más con los valores del vector "cluster", y creamos la matriz "new_centroids" de iguales dimesiones a la matriz "centroids".
+
+Seguidamente creamos un cuarto bucle, también dentro del primero, que recorre de nuevo los valores de "k", mediante el cual rellenamos la matriz "new_centroids" con las coordenadas de los nuevos centroides, es decir, los centroides de los clusters que acabamos de crear. Dichas coordenadas las calculamos haciendo la media de cada variable en cada uno de los clusters asignados en el paso anterior. En este caso implementar el calculo de las coordenadas de los nuevos centroides en R requiere de un única línea de codigo, mientras que esta vez es en Python donde hemos necesitado de pasos intermedios para implementar este código.
+
+Cerramos este cuarto bucle y utilizamos la función "if" para cambiar el valor de "centroids_not_equal" a FALSE si el vector "centroids" y el vector "new_centroids" son iguales y si esta condicion no ocurrieran con el comando "else" sobreescribimos el vector "centroids" con los valores del vector "new_centroids". Con estas cuatro líneas de código lo que conseguimos es comparar los centroides iniciales con los que hemos empezado el proceso con los que hemos creados tras asignar los clusters a los puntos, la idea es cada vez que ejecutamos este proceso los clusters sean cada vez más óptimos y más diferenciados entre si por lo que los centroides iniciales y finales irán cambiando, y el bucle se seguirá ejecutando hasta que demos con los clusters óptimos y los centroides de los que hemos partido sean los mismo que calculamos a traves de las medias de los cluster, ya que la disposición de los clusters, al haber alcanzado la forma óptima, permanece invariable. En este momento el vector lógico "centroids_not_equal" tomará el valor FALSE, el bucle inicial "while" dejará de ejecutarse y habremos obtenido nuestros clusters óptimos.
+
+Antes de cerrar el bucle "while" hemos ido sumando 1 al escalar "ite" para poder ir midiendo en cuantas iteracciones se lleva a cabo el proceso. Por último, fuera del bucle pedimos a la función que nos devulva la matriz "assig_cluster", es decir, nuestro dataset orginal pero con una columna más donde se especifíca el cluster final al que pertenece cada punto.
 
 ### 1.3. Cluster the data using the optimum value using k-means
 
@@ -53,25 +66,27 @@ These results make sense since, given that for the "elbow_graph" function we hav
 
 ### 1.5. Plot the results of the elbow graph
 
-In the following image we can see the elbow graph that is produced after applying the "elbow_graph" function to our dataset:
+In the following images we can see the elbow graph that is produced after applying the "elbow_graph" function to our dataset, in both R and Python:
 
-```{r, echo=FALSE, out.width = '100%'}
+```{r, echo=FALSE, out.width = '50%'}
 knitr::include_graphics("elbowgraph.png")
+knitr::include_graphics("elbowgraphPython.png")
 ```
 
-In the graph it can be seen that the elbow point, that is the point where the graph presents an "elbow" due to a significant change in slope, is associated with k = 2, so the optimal number of clusters for our dataset will be 2, as we mentioned before.
+In the graphs it can be seen that the elbow point, that is the point where the graph presents an "elbow" due to a significant change in slope, is associated with k = 2, so the optimal number of clusters for our dataset will be 2, as we mentioned before.
 
 ### 1.6. Plot the first 2 dimensions of the clusters
 
-If we represent the first two dimensions of our dataset, "price" and "speed", for the two clusters created previously with the "custom_kmeans" function, we obtain the following graph:
+If we represent the first two dimensions of our dataset, "price" and "speed", for the two clusters created previously with the "custom_kmeans" function, we obtain the following graphs, in both R and Python:
 
-```{r, echo=FALSE, out.width = '100%'}
+```{r, echo=FALSE, out.width = '50%'}
 knitr::include_graphics("first2dimensions.png")
+knitr::include_graphics("first2dimensionsPython.png")
 ```
 
 Despite the fact that two dimensions are too few to determine the clusters of a dataset of six variables, we can observe that when we graph these two variables together, two differentiated groups of data are formed that correspond practically 100% with the clusters that we have created, which gives us an idea that our clusters are probably an optimal solution for our dataset.
 
-As we have said, two dimensions are not enough to appreciate the true nature of the clusters, so in the following image we have decided to plot the first three PCA of our dataset for our two clusters, in order to observe them better.
+As we have said, two dimensions are not enough to appreciate the true nature of the clusters, so in the following image we have decided to plot the first three PCA of our dataset for our two clusters, in order to observe them better:
 
 ```{r, echo=FALSE, out.width = '100%'}
 knitr::include_graphics("3firstpca.png")
@@ -81,13 +96,18 @@ In this graph we can observe two different groups of data that again correspond 
 
 ### 1.7. Find the cluster with the highest average price and print it
 
-After calculating the average price of both clusters, we have obtained that the cluster with the highest average price is cluster 1.
+After calculating the average price of both clusters, we have obtained that the cluster with the highest average price is cluster 1, as we had already been able to observe when we plotted the variables "price" and "speed" for our two clusters.
 
 ### 1.8. Print a heat map using the values of the clusters centroids
 
-```{r, echo=FALSE, out.width = '100%'}
+Next we have created a heat map using the values of the clusters centroids, in both R and Python:
+
+```{r, echo=FALSE, out.width = '50%'}
 knitr::include_graphics("heatmap.png")
+knitr::include_graphics("heatmapPython.png")
 ```
+
+In this graphs we can observe the dependency of belonging to each cluster depending on each of the variables of the dataset. Cluster 1 is characterized as having the highest average for "ram", "price", "speed", "cores" and "screen", while cluster 2 has the highest average for "hd".
 
 ## 2. Parallel implementation, multiprocessing
 
