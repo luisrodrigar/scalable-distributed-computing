@@ -147,6 +147,12 @@ In this graphs we can observe the dependency of belonging to each cluster depend
 
 ### 3.1. Write a parallel version of you program using threads
 
+In this section we have implemented two different approaches depending on the programming language we are working with. 
+
+First we are going to describe the case when the programming language is R, it doesn't allow to use a proper thread, then what we are going to use are clusters of type _fork_. This type of parallelization copies the entire current version of R and moves it to a new core. They are usually faster than sockets, the approach described in the multiprocessing point, nevertheless they are only available in POSIX systems (MacOS, Linux and so on). The way we have implemented them is very similar that the way we have implemented the multiprocessing, although in this case we have to explicitly indicate that we want forking clusters.
+
+
+
 ### 3.2. Measure the time and optimize the program to get the fastest version you can
 
 ### 3.3. Plot the first 2 dimensions of the clusters
