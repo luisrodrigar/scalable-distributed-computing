@@ -133,6 +133,29 @@ In this graphs we can observe the dependency of belonging to each cluster depend
 
 ## 2. Parallel implementation, multiprocessing
 
+To do this in R we will use mainly two libraries: "doParallel" and "foreach".
+
+The first one is a library that is oriented to the parallelization of problems where each thread performs its work independently, that is to say that they do not need to communicate in any way. The basic computational model that we should follow is:
+
+1. Start M processes (threads).
+2. Send the data required for each task to the threads.
+3. Establish the task to be parallelized.
+4. Wait for all threads to finish and get the results.
+5. Close the processes (threads).
+
+The second library, "foreach" allows to process loops in parallel and also needs the "doParallel" library to make the process in parallel using the registerDoParallel() function.  One of the benefits of this library is that you can execute commands using the foreach() function and do them in parallel using the %dopar% command. In addition, this foreach() function has a ".combine" argument that is used to specify the type of output argument needed (c: vector, rbind: matrix, list:list, data.frame: output of type data.frame...).
+
+As we know there are two ways to perform parallelism in R: 
+
+- via sockets: it creates a copy of the current R environment, in each core and performs the indicated operation, this has no major implementation difficulty but is not available for Windows.
+
+- via forking: is more general and requires a little more work to implement, here a cluster is created on the same machine (it can also be used to create a cluster with more machines) and a new version of R is launched to each core, since it is a new environment, it must send to the threads each object it needs to perform its task, including the invocation of libraries, if necessary. This approach is available on any operating system (including Windows).
+
+We will see that if a script takes a few seconds, parallelization is probably not worth it as we will see in our case. 
+
+
+### 2.1. Write a parallel version of you program using multiprocessing
+
 Our function in this case using multiprocessing will be called **"custom_kmeans_mp "** which, as we said before, will be in charge of dividing our dataset into a certain number of groups, where each observation of the dataset belongs to the group whose average value is closest to that observation. 
 
 The first thing we will do is to detect the number of logical cores in the machine using detectCores(). We have selected half of the cores since this is usually what works best to keep the operating system and the rest of the tasks of our machine running normally. To this quantity we will assign the name "num_cores".
@@ -159,10 +182,6 @@ On the other hand to perform the elbow graph using multiprocessing we build the 
 - The iterative process performed to obtain "sum_sq_dist_total" (squared distances between each point and the centroid of the cluster associated to that point for each of the cluster values we want to study) in our serial version will be replaced by the foreach() function which will allow us to determine the optimal number of clusters for our dataset by command "%dopar%" which performs the same steps as the "elbow_graph" function but in parallel.
 
 - Finally we will use the autostopCluster() function which must be executed to close all the R environments created in the threads.
-
-
-
-### 2.1. Write a parallel version of you program using multiprocessing
 
 ### 2.2. Measure the time and optimize the program to get the fastest version you can
 
