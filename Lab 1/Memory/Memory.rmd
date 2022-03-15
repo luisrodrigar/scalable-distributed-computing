@@ -63,9 +63,9 @@ Once the previous step is completed, we will have a list contained the sum of sq
 At this point, we have already implemented the serial versions of the `custom_kmeans` and the `elbow_graph` functions, then we proceed to process our dataset using them. To do this we have to make beforehand some tweaks in our dataset:
 
 - Scaling the data, then all the variables do have the same weight in out dataset. There won't be some variables with more "power" than others when the distance is measured. 
-- Dropping the categorical variables from the analysis since the algorithm is not working properly when categorical variables are presented. It is not possible to measure the distance between categories-. 
+- Dropping the categorical variables from the analysis since the algorithm is not working properly when categorical variables are presented. It is not possible to measure the distance between categories. 
 
-After making these changes, we have proceeded to apply the `custom_kmeans` function to our dataset for a value of `k` equal to 2, since, as we will see later when we represent the elbow graph, 2 is the optimal number of clusters for our dataset.
+After making these changes, we have proceeded to apply the `custom_kmeans` function to our dataset for a value of `k` equal to 2, since, as we will see later, when we represent the elbow graph, 2 is the optimal number of clusters for our dataset.
 
 ### 1.4. Measure time
 
@@ -88,14 +88,14 @@ These results make sense since we have assessed the time consumption when we cal
 
 ### 1.5. Plot the results of the elbow graph
 
-In the following images we can see the elbow graph that is produced after applying the "elbow_graph" function to our dataset, in both R and Python:
+In the following images we can see the elbow graph that is produced after applying the function `elbow_graph` to our dataset, in both R and Python:
 
 ```{r, echo=FALSE, out.width = '50%'}
 knitr::include_graphics("elbowgraph.png")
 knitr::include_graphics("elbowgraphPython.png")
 ```
 
-In the graphs it can be seen that the elbow point, that is the point where the graph presents an "elbow" due to a significant change in slope, is associated with k = 2, so the optimal number of clusters for our dataset will be 2, as we mentioned before.
+In the graphs above it can be seen that the elbow point, that is the point where the graph presents an "elbow" due to a significant change in slope, is associated with k = 2, so the optimal number of clusters for our dataset will be 2, as we mentioned before.
 
 ### 1.6. Plot the first 2 dimensions of the clusters
 
