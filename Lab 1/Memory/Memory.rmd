@@ -3,22 +3,20 @@ title: "LAB1. K-MEANS PARALLELIZATION in R and PYTHON "
 subtitle: "Memory"
 author: "Luis Angel Rodriguez Gracia, Sara Dovalo del Río and Alejandra Estrada Sanz"
 date: "15/03/2022"
+header-includes:
+  - \usepackage{algorithm}
+  - \usepackage{algpseudocode}
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
 ```
 
 ## 1. Serial version
 
-### 1.1. Construct the elbow graph and find the optimal clusters number (k)
-
-El gráfico elbow es un método utilizado para determinar el número de clusters de un conjunto de datos. En el gráfico se representa el número de clusters frente a la suma de la distancia al cuadrado entre cada punto del dataset y el centroide del cluster al que se ha asignado dicho punto. En general el gráfico tiene inicialmente una pendiente muy pronunciada, ya que la diferencia de distancias entre tener un cluster o dos es notoría, y poco a poco se irá suavizando dicha pendiente a medida que el número de clusters sea más alto y la diferencia entre trabajar con un cluster más o menos no sea tan significativa en las distancias. El punto que buscamos haciendo este tipo de analísis se denomina elbow point, es decir, el punto donde el gráfico presenta un "codo" debido a un cambio significativo en la pendiente, dicho punto estará asociado al número de clusters optimos para nuestro dataset.
-
-Hemos denominado  "elbow_graph" a la función que hemos construido para crear nuestro gráfico elbow. Dicha función depende de tres parámetros, el dataset que se quiere analizar, "X", el número máximo de clusters a estudiar, "total_k", y la semilla que vamos a utilizar, "seed_value". Lo primero que hacemos en nuestro código es determinar el número de filas y columnas que tiene el dataset, "n" y "p", y crear un vector, "sum_sq_dist_total", de logitud "total_k", donde posteriormente guardaremos la suma de las distancias al cuadrado una vez calculada en función de "total_k". A continuación aplicamos a nuestro dataset la función "custom_kmeans", cuya contrucción explicaremos en el próximo apartado, para cada uno de los valores de "total_k", lo cual nos devuelve el propio dataset con una columna más correspodiente al cluster que se le ha asignado a cada punto. Para aplicar a esta función cada valor de "total_k" utilizamos la función "lapply" en R, mientras que en Python creamos un bucle que recorre todos los valores de "total_k". Una vez tenemos ya los datos asignados a clusters dentro del bucle que recorre los valores de "total_k" creamos un escalar denominado "sum_sq_distance" donde recogeremos la suma de las distancias al cuadrado para cada valor de "total_k". Seguidamente creamos otro bucle dentro del primero que recorra los valores del anterior, es decir, recorremos cada uno de los cluster para cada número total de clusters. Dentro de este bucle guardamos los elementos que pertenecen a un mismo cluster en la matriz "elements_cluster" y dentro del vector "centroidekth" calculamos las coordenadas del centroide asociado dicho cluster haciendo la media de las columnas de la matriz "elements_cluster". Una vez ya tenemos los puntos y el centroide de un mismo cluster recogemos en el vector "distance_centroid" la distancia al cuadrado en módulo de cada punto del cluster al centroide asociado, y guardamos en el escalar "sum_sq_distance" la suma total de cada una de las distancias. Ya para finalizar cerramos el segundo bucle y dentro del primero asociamos el escalar "sum_sq_distance" para cada valor de "total_k" a un elemento del vector "sum_sq_dist_total" creado anteriormente. Finalmente cerramos también el primer bucle y pedimos a nuestra función que como resultado final nos devuelva el vector "sum_sq_dist_total" donde veremos reflejada la suma de la distancia al cuadrado entre cada punto y el centroide del cluster asociado a dicho punto para cada valor de "total_k", es decir, para cada uno de los valores de clusters que queremos estudiar, lo cuál nos permitirá determinar el número de clusters óptimo para nuestro dataset.
-
-### 1.2. Implement the k-means algorithm
+### 1.1. k-means algorithm
 
 El algoritmo k-means es un método de agrupamiento cuyo objetivo es dividir un conjunto de datos en un determinado número de grupos, donde cada observación del conjunto de datos pertenece al grupo cuyo valor medio es más cercano a dicha observación.
 
@@ -37,6 +35,29 @@ Seguidamente creamos un cuarto bucle, también dentro del primero, que recorre d
 Cerramos este cuarto bucle y utilizamos la función "if" para cambiar el valor de "centroids_not_equal" a FALSE si el vector "centroids" y el vector "new_centroids" son iguales y si esta condicion no ocurrieran con el comando "else" sobreescribimos el vector "centroids" con los valores del vector "new_centroids". Con estas cuatro líneas de código lo que conseguimos es comparar los centroides iniciales con los que hemos empezado el proceso con los que hemos creados tras asignar los clusters a los puntos, la idea es cada vez que ejecutamos este proceso los clusters sean cada vez más óptimos y más diferenciados entre si por lo que los centroides iniciales y finales irán cambiando, y el bucle se seguirá ejecutando hasta que demos con los clusters óptimos y los centroides de los que hemos partido sean los mismo que calculamos a traves de las medias de los cluster, ya que la disposición de los clusters, al haber alcanzado la forma óptima, permanece invariable. En este momento el vector lógico "centroids_not_equal" tomará el valor FALSE, el bucle inicial "while" dejará de ejecutarse y habremos obtenido nuestros clusters óptimos.
 
 Antes de cerrar el bucle "while" hemos ido sumando 1 al escalar "ite" para poder ir midiendo en cuantas iteracciones se lleva a cabo el proceso. Por último, fuera del bucle pedimos a la función que nos devulva la matriz "assig_cluster", es decir, nuestro dataset orginal pero con una columna más donde se especifíca el cluster final al que pertenece cada punto.
+
+### 1.2. Elbow graph
+
+The elbow graph is a method used to determine the optimal number of clusters for a set of data. The resultant plot represents the sum of squared distances between points belonging to the same cluster over the total number of clusters.
+
+Generally speaking, the graph has a steep slope at the beginning, due to the difference of distances between having one and two clusters is significant, and little by little the slope is getting less steep. Therefore, the larger the number of clusters the more softened the slope (smaller sum of squared errors to each centroid). We are looking for the elbow point, this means that we are searching for the point where there is a significant change in the slope. The associated total number of clusters of this point is the optimal number of groups for the given dataset.
+
+We have implemented the `elbow_graph` function which helps us to create the elbow graph. This function depends on three parameters:
+
+- The dataset we want to analyze, identified as `X`.
+- The total number of cluster subject to study, identified as `total_k`.
+- The seed value in order to reproduce the executions, identified as `seed_value`.
+
+The first thing to do is to get the number of rows (_n_) and the number of columns (_p_). Later on, we initialize the vector `sum_sq_dist_total` resultant with the max number of clusters obtaining thanks to the parameter `total_k`. In this variable we will store for each number of clusters the total sum of squared distances in each centroid to the belonging points.
+
+The next step is about executing the method k-means, which we have already implemented, for each number of clusters with the given data and the given seed value. The execution of this method produces a list which contains for each number of cluster the resultant matrix with the observations associated to each cluster. 
+
+In R we have used the method `lapply` to execute this method as many times as the value of the parameter `total_k` is defined, meanwhile, in Python this functions is not available and we need to defined an explicit for-loop which iterates `total_k` times.
+
+The final step is to calculate the sum of squared distances for each possible number of groups using the list of matrix obtained in the previous step. This will be the result of executing the method `elbow_graph`. Therefore, we have defined 1 for-loops, iterating for each possible number of clusters, and one nested loop which iterates from each cluster inside a specific possible number of total clusters. In this last loop we calculate each centroid per group applying the average function per columns and their distances to each point belonging to this group. The resultant is the sum of squared distances for the k-th number of groups.
+
+Once the previous step is completed, we will have a list contained the sum of squared distances for each possible group. For instance, if we pick the element of the position 2 in the resultant list we will have the sum of squared distance associated to the result of executing the k-means with k equal to 2.
+
 
 ### 1.3. Cluster the data using the optimum value using k-means
 
