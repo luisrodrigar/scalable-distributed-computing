@@ -58,7 +58,6 @@ The final step is to calculate the sum of squared distances for each possible nu
 
 Once the previous step is completed, we will have a list contained the sum of squared distances for each possible group. For instance, if we pick the element of the position 2 in the resultant list we will have the sum of squared distance associated to the result of executing the k-means with k equal to 2.
 
-
 ### 1.3. Cluster the data using the optimum value using k-means
 
 Once the "custom_kmeans" function has been implemented, we proceed to apply it to our dataset. To do this we must make some previous modifications in our dataset, such as scaling the data so that some variables do not have more weight than others when measuring the distance and eliminate the categorical variables from the analysis since it is not possible to measure the distance between categories.
