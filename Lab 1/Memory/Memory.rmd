@@ -91,7 +91,57 @@ knitr::include_graphics("heatmap.png")
 
 ## 2. Parallel implementation, multiprocessing
 
+To do this in R we will use mainly two libraries: "doParallel" and "foreach".
+
+The first one is a library that is oriented to the parallelization of problems where each thread performs its work independently, that is to say that they do not need to communicate in any way. The basic computational model that we should follow is:
+
+1. Start M processes (threads).
+2. Send the data required for each task to the threads.
+3. Establish the task to be parallelized.
+4. Wait for all threads to finish and get the results.
+5. Close the processes (threads).
+
+The second library, "foreach" allows to process loops in parallel and also needs the "doParallel" library to make the process in parallel using the registerDoParallel() function.  One of the benefits of this library is that you can execute commands using the foreach() function and do them in parallel using the %dopar% command. In addition, this foreach() function has a ".combine" argument that is used to specify the type of output argument needed (c: vector, rbind: matrix, list:list, data.frame: output of type data.frame...).
+
+As we know there are two ways to perform parallelism in R: 
+
+- via sockets: it creates a copy of the current R environment, in each core and performs the indicated operation, this has no major implementation difficulty but is not available for Windows.
+
+- via forking: is more general and requires a little more work to implement, here a cluster is created on the same machine (it can also be used to create a cluster with more machines) and a new version of R is launched to each core, since it is a new environment, it must send to the threads each object it needs to perform its task, including the invocation of libraries, if necessary. This approach is available on any operating system (including Windows).
+
+We will see that if a script takes a few seconds, parallelization is probably not worth it as we will see in our case. 
+
+
 ### 2.1. Write a parallel version of you program using multiprocessing
+
+Our function in this case using multiprocessing will be called **"custom_kmeans_mp "** which, as we said before, will be in charge of dividing our dataset into a certain number of groups, where each observation of the dataset belongs to the group whose average value is closest to that observation. 
+
+The first thing we will do is to detect the number of logical cores in the machine using detectCores(). We have selected half of the cores since this is usually what works best to keep the operating system and the rest of the tasks of our machine running normally. To this quantity we will assign the name "num_cores".
+
+Next, we will assign a new variable "par_cluster" to create the cluster, where we specify the number of threads that we are going to use by means of the function makeCluster().
+
+In what follows, we use the "foreach" library, which, as we said before, allows us to process loops in parallel. 
+
+That is, we will go from calculating the distance in modulus from each point to each of the centroids (previously chosen randomly) using a loop to perform it in parallel using the foreach() function and we will choose the minimum distance, now using parApply() (function are similar to those known from the base of R that takes care of all the heavy work in the parelization) instead of performing a loop going through each of the calculated distances.
+
+We then calculate the cluster number to which each point belongs, i.e. the cluster to which the distance is smaller and store it in the variable "cluster" using the max.col() function. As in the serial case, we add a column to our dataset (variable "assig_cluster") where each point is assigned the cluster for which its distance to the respective centroid is the minimum.
+
+Another modification would be to calculate the new centroids instead of using an iterative process, also using the foreach() function.
+
+Finally we will use the autostopCluster() function which must be executed to close all R environments created in the threads (if this is not done, our subsequent procedures may present problems).
+
+
+On the other hand to perform the elbow graph using multiprocessing we build the function **"elbow_graph_mp "** and which differs from the previous function performed serially in the following aspects:
+
+- As in the case of the previous function, we will first detect the number of logical cores in the machine using detectCores(). We have selected half of the cores and to this amount we will assign the name "num_cores".
+
+- Then we apply to our dataset the function "custom_kmeans" for each of the values of "total_k" (column corresponding to the cluster assigned to each point). To apply this function in parallel we will use the function "parLapply" in R, while in Python....
+
+- The iterative process performed to obtain "sum_sq_dist_total" (squared distances between each point and the centroid of the cluster associated to that point for each of the cluster values we want to study) in our serial version will be replaced by the foreach() function which will allow us to determine the optimal number of clusters for our dataset by command "%dopar%" which performs the same steps as the "elbow_graph" function but in parallel.
+
+- Finally we will use the autostopCluster() function which must be executed to close all the R environments created in the threads.
+
+
 
 ### 2.2. Measure the time and optimize the program to get the fastest version you can
 
@@ -112,3 +162,18 @@ knitr::include_graphics("heatmap.png")
 ### 3.4. Find the cluster with the highest average price and print it
 
 ### 3.5. Print a heat map using the values of the clusters centroids
+
+
+## 4. Conclusions
+- La función kmeans serial tiene buena performance. Usar paralelismo aquí parece que no mejora nada.
+
+- Añadir procesamiento mutiproceso/threading parece que empeora las cosas. Esto puede deberse al tiempo de acceso a memoria ya que los sistemas multiprocesadores se comparte la memoria RAM entre hilos. Por ello, es altamente probable que no exista beneficio al realizar procesamiento en paralelo.
+
+- En cambio, llamar al método elbow si mejora para cada iteracion k=i. Como es normal, el enfoque forking tiene ligeramente mejor rendimiento que vía sockets.
+
+- Pudimos observar que el paralelismo funciona mejor con menos núcleos que el total. Obtenemos un tiempo óptimo con la mitad de núcleos.
+
+
+### Notes Python
+Se utiliza el numPy 
+
