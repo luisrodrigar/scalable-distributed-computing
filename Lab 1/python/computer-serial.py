@@ -60,7 +60,7 @@ def elbow_graph(X, total_k, seed_value):
 
 
 if __name__ == "__main__":
-    df_without_cat = utils.tiny_data(utils.perform_dataset())
+    df_without_cat = utils.tiny_data(utils.dev_dataset())
     scaled_data = utils.scale_data(df_without_cat)
     (n, p) = scaled_data.shape
     optiomal_k = 2
