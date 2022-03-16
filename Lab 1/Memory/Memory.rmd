@@ -1,4 +1,5 @@
 ---
+<<<<<<< Updated upstream
 title: "Lab 1: Parallelization (Multiprocessing and Threading)"
 subtitle: "Scalable and Distributed Computing"
 author: "Luis Ángel Rodríguez García, Sara Dovalo del Río and Alejandra Estrada Sanz"
@@ -6,6 +7,13 @@ date: "13/03/2022"
 output: 
   pdf_document:
     toc: true
+=======
+title: "LAB1. K-MEANS PARALLELIZATION in R and PYTHON "
+subtitle: "Memory"
+author: "Luis Angel Rodriguez Gracia, Sara Dovalo del Río and Alejandra Estrada Sanz"
+date: "15/03/2022"
+output: pdf_document
+>>>>>>> Stashed changes
 ---
 
 ```{r setup, include=FALSE}
