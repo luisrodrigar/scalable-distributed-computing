@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 16 16:23:47 2022
+Created on Wed Mar 14 16:23:47 2022
 
-@author: saradovalo
+@author: Sara Dovalo del Río, Alejandra Estrada Sanz and Luis Ángel Rodríguez García
 """
 import numpy as np
 import pandas as pd
@@ -15,8 +15,10 @@ import seaborn as sns
 ########################################
 
 ## Lecture of the data
-data = pd.read_csv("tripdata_2017-01.csv")
-df = pd.DataFrame(data)
+data_1 = pd.read_csv("data/tripdata_2017-01.csv")
+data_2 = pd.read_csv("data/tripdata_2017-02.csv")
+df = pd.concat([data_1, data_2], axis=0)
+(n, p) = df.shape
 df.head()
 df.info()
 
