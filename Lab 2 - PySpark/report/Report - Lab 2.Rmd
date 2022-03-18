@@ -117,6 +117,10 @@ In this case, we want to know the maximum distance of a trip based on the number
 
 To do this we first used the function `miles_to_km` to convert our variable `trip_distance` to km, then we calculated the average of this variable according to the number of passengers (variable `passenger_count`) and finally we plotted passenger_count vs `trip_distance` and we can see the behaviour of this distribution.
 
+```{r, echo=FALSE, out.width = '50%'}
+knitr::include_graphics("Images/max_distance.png")
+```
+
 In the plot above we can see that the largest trip distance (almost 250km) was made by four passengers.
 
 \newpage
